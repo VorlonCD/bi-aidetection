@@ -1058,7 +1058,7 @@ namespace AITool
                     //upload the alert image which could not be analyzed to Telegram
                     if (AppSettings.Settings.send_errors == true)
                     {
-                        bool success = await TelegramUpload(CurImg);
+                        bool success = await TelegramUpload(CurImg, "Error");
                     }
 
                 }
@@ -1128,7 +1128,7 @@ namespace AITool
         }
 
         //send image to Telegram
-        public static async Task<bool> TelegramUpload(ClsImageQueueItem CurImg)
+        public static async Task<bool> TelegramUpload(ClsImageQueueItem CurImg, string message)
         {
             bool ret = false;
 
@@ -1144,14 +1144,14 @@ namespace AITool
 
                         //upload image to Telegram servers and send to first chat
                         Log($"      uploading image to chat \"{AppSettings.Settings.telegram_chatids[0]}\"");
-                        var message = await bot.SendPhotoAsync(AppSettings.Settings.telegram_chatids[0], new InputOnlineFile(image_telegram, "image.jpg"));
+                        var message = await bot.SendPhotoAsync(AppSettings.Settings.telegram_chatids[0], new InputOnlineFile(image_telegram, "image.jpg"), message);
                         string file_id = message.Photo[0].FileId; //get file_id of uploaded image
 
                         //share uploaded image with all remaining telegram chats (if multiple chat_ids given) using file_id 
                         foreach (string chatid in AppSettings.Settings.telegram_chatids.Skip(1))
                         {
                             Log($"      uploading image to chat \"{chatid}\"");
-                            await bot.SendPhotoAsync(chatid, file_id);
+                            await bot.SendPhotoAsync(chatid, file_id, message);
                         }
                         ret = true;
                     }
@@ -1279,7 +1279,7 @@ namespace AITool
                             {
                                 Log("   Uploading image to Telegram...");
                                 
-                                if (!await TelegramUpload(CurImg))
+                                if (!await TelegramUpload(CurImg, cam.name + " - " + cam.last_detections_summary))
                                 {
                                     ret = false;
                                     Log("   -> ERROR sending image to Telegram.");
