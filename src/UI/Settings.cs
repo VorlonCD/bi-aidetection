@@ -44,6 +44,7 @@ namespace AITool
             public string LogLevel = "Debug";
             public bool send_errors = true;
             public bool startwithwindows = false;
+            public bool minimizetotray = true;
             public int close_instantly = -1;
             public List<Camera> CameraList = new List<Camera>();
             public string deepstack_url = "127.0.0.1:81";

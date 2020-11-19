@@ -1898,6 +1898,12 @@
   <metadata name="toolStrip1.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>1000, 17</value>
   </metadata>
+  <metadata name="toolStrip2.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <value>1519, 17</value>
+  </metadata>
+  <metadata name="toolStrip1.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <value>1000, 17</value>
+  </metadata>
   <data name="toolStripDropDownButtonFilters.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>
         iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8
@@ -1935,24 +1941,6 @@
         sIg4cUJC1lGu+7/AxuZfxfG+indKrmUAAAAASUVORK5CYII=
 </value>
   </data>
-  <data name="showOnlyRelevantObjectsToolStripMenuItem.ToolTipText" xml:space="preserve">
-    <value>The setting will hide all non relevant objects.   It applies to [variables], the history Detections column, 
-[summary]/[summarynonescaped] variables, objects shown in the right-hand image display and to 
-merging of annotations.
-
-If you enable this, the only way to see all the objects detected by DeepStack is to pick "Prediction Details"
-or have the log set to Debug and view it.</value>
-  </data>
-  <data name="storeFalseAlertsToolStripMenuItem.ToolTipText" xml:space="preserve">
-    <value>If disabled the database will be smaller, leave enabled for better troubleshooting.  Keep
-in mind that Deepstack will often miss animals at night completly so you wont be able 
-to review footage from night before.</value>
-  </data>
-  <data name="restrictThresholdAtSourceToolStripMenuItem.ToolTipText" xml:space="preserve">
-    <value>Doods has a feature that lets you specify the minimum threshold/Confidence when you give it the image to process.   
-If this is unchecked, it will give us EVERYTHING (including the kitchen sink) and let AI tool decide the confidence threshold 
-like it does for Deepstack.  But rather than ever seeing ‘false alert’ you will almost always have objects detected, just with low confidence.</value>
-  </data>
   <data name="toolStripDropDownButtonOptions.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>
         iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8
@@ -1987,6 +1975,24 @@ like it does for Deepstack.  But rather than ever seeing ‘false alert’ you w
         A/8QLiccbDv2OI/rC2ceaHzVhijXZZacktJCqtnfFCZHcHz8kefVl1OW8/6ZPV7J8Ee0pKGxcZ4znd7Q
         0DC/d+/eX5Sv/xf7BJ4IP6I471/u79cr2ho4NRHoa+EvaUFBfwIh7NErm8l5rgAAAABJRU5ErkJggg==
 </value>
+  </data>
+  <data name="showOnlyRelevantObjectsToolStripMenuItem.ToolTipText" xml:space="preserve">
+    <value>The setting will hide all non relevant objects.   It applies to [variables], the history Detections column, 
+[summary]/[summarynonescaped] variables, objects shown in the right-hand image display and to 
+merging of annotations.
+
+If you enable this, the only way to see all the objects detected by DeepStack is to pick "Prediction Details"
+or have the log set to Debug and view it.</value>
+  </data>
+  <data name="storeFalseAlertsToolStripMenuItem.ToolTipText" xml:space="preserve">
+    <value>If disabled the database will be smaller, leave enabled for better troubleshooting.  Keep
+in mind that Deepstack will often miss animals at night completly so you wont be able 
+to review footage from night before.</value>
+  </data>
+  <data name="restrictThresholdAtSourceToolStripMenuItem.ToolTipText" xml:space="preserve">
+    <value>Doods has a feature that lets you specify the minimum threshold/Confidence when you give it the image to process.   
+If this is unchecked, it will give us EVERYTHING (including the kitchen sink) and let AI tool decide the confidence threshold 
+like it does for Deepstack.  But rather than ever seeing ‘false alert’ you will almost always have objects detected, just with low confidence.</value>
   </data>
   <data name="toolStripButtonDetails.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>
@@ -2167,14 +2173,14 @@ like it does for Deepstack.  But rather than ever seeing ‘false alert’ you w
         YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAI5SURBVDhPY8ACOIGYEcJEAcxAzAFh4gG8vLwWylxcxkAm
         E0SEgcGMgYGPl5PTnIeHRxMqhBewSYqIJHsyMLiKsrMrawOxG5ANNDgWKIfNZRiAVUZGpiw/Q327tjL7
         W2V59rdJ7owrpKSkSoByxBmQn8i5tCBd6p+CgsJ/SUnJ//a2LH/zM5SmAuXg3sIJODk5pXyY2A6aign/
-        qysv+K+nJv/fgJf7bxgL6xagNDtEFW4gGsHNf7yVke3fS3bm/9meFv9j3a3+f+Dj+b+fgelvJq/gOqAa
+        qysv+K+nJv/fgJf7bxgL6xagNDtEFW4gGsHNf7yeke3fS3bm/9meFv9j3a3+f+Dj+b+fgelvJq/gOqAa
         bohSNAAM4UAgDi0Tl32yRkjo/3sOjv+13j7/w42N//80Nvm/SVT0/zIxmRtycnLR0tLSIVBtKAAUx5w+
         kpK/VnFz///Aw/P/npnZ/yfRof+/WVj938zF9b9dTe0rUA3IG9jTgykDg/BxoO2FfHz/tUVE/u8SEv6/
         WlXtvyLQ9i1sbP+vaGn9kWRg4IIqxwrY1wsKvuwAOl+Tl/f/NkbG/5OBbEGggTNZWf/ftLR8DlTDAlGK
         BQATi3mGoODZqUxM/68yMPw/CcR3WVj+7wIatJqZ+X+7vsFZDg4OWahyTMDPz1/iysVTKQd0ch/IdqBB
         84EaZwENMlRS+u8oLN4qIiLiBVWOARh1dHTqgDS/GyPLnlygpiygIclAA0qBXojg5tsgLCxsAjQgGaIc
-        DQAlbIFRBMpEIMDsxcA4LYmB8b43M/NVRwbGXqAYOBUKCAjYqqioGILY6ABbOgdpwiYOFWNgAABK+ZKD
-        j0Hv8QAAAABJRU5ErkJggg==
+        DQAlbIFRBMpEIMDsxcA4LYmB8b43M/NVRwbGXqAYOBUKCAjYqqioGILY6ABbOgdpwiYOFWNgAAA8O5J9
+        hlNj0gAAAABJRU5ErkJggg==
 </value>
   </data>
   <data name="chk_filterErrorsAll.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
@@ -2183,16 +2189,19 @@ like it does for Deepstack.  But rather than ever seeing ‘false alert’ you w
         YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAI5SURBVDhPY8ACOIGYEcJEAcxAzAFh4gG8vLwWylxcxkAm
         E0SEgcGMgYGPl5PTnIeHRxMqhBewSYqIJHsyMLiKsrMrawOxG5ANNDgWKIfNZRiAVUZGpiw/Q327tjL7
         W2V59rdJ7owrpKSkSoByxBmQn8i5tCBd6p+CgsJ/SUnJ//a2LH/zM5SmAuXg3sIJODk5pXyY2A6aign/
-        qysv+K+nJv/fgJf7bxgL6xagNDtEFW4gGsHNf7yFke3fS3bm/9meFv9j3a3+f+Dj+b+fgelvJq/gOqAa
+        qysv+K+nJv/fgJf7bxgL6xagNDtEFW4gGsHNf7yeke3fS3bm/9meFv9j3a3+f+Dj+b+fgelvJq/gOqAa
         bohSNAAM4UAgDi0Tl32yRkjo/3sOjv+13j7/w42N//80Nvm/SVT0/zIxmRtycnLR0tLSIVBtKAAUx5w+
         kpK/VnFz///Aw/P/npnZ/yfRof+/WVj938zF9b9dTe0rUA3IG9jTgykDg/BxoO2FfHz/tUVE/u8SEv6/
         WlXtvyLQ9i1sbP+vaGn9kWRg4IIqxwrY1wsKvuwAOl+Tl/f/NkbG/5OBbEGggTNZWf/ftLR8DlTDAlGK
         BQATi3mGoODZqUxM/68yMPw/CcR3WVj+7wIatJqZ+X+7vsFZDg4OWahyTMDPz1/iysVTKQd0ch/IdqBB
         84EaZwENMlRS+u8oLN4qIiLiBVWOARh1dHTqgDS/GyPLnlygpiygIclAA0qBXojg5tsgLCxsAjQgGaIc
-        DQAlbIFRBMpEIMDsxcA4LYmB8b43M/NVRwbGXqAYOBUKCAjYqqioGILY6ABbOgdpwiYOFWNgAABIhJKC
-        K7GDKwAAAABJRU5ErkJggg==
+        DQAlbIFRBMpEIMDsxcA4LYmB8b43M/NVRwbGXqAYOBUKCAjYqqioGILY6ABbOgdpwiYOFWNgAAA8O5J9
+        hlNj0gAAAABJRU5ErkJggg==
 </value>
   </data>
+  <metadata name="toolTip1.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <value>160, 17</value>
+  </metadata>
   <metadata name="HistoryImageList.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>305, 17</value>
   </metadata>
@@ -2201,7 +2210,7 @@ like it does for Deepstack.  But rather than ever seeing ‘false alert’ you w
         AAEAAAD/////AQAAAAAAAAAMAgAAAFdTeXN0ZW0uV2luZG93cy5Gb3JtcywgVmVyc2lvbj00LjAuMC4w
         LCBDdWx0dXJlPW5ldXRyYWwsIFB1YmxpY0tleVRva2VuPWI3N2E1YzU2MTkzNGUwODkFAQAAACZTeXN0
         ZW0uV2luZG93cy5Gb3Jtcy5JbWFnZUxpc3RTdHJlYW1lcgEAAAAERGF0YQcCAgAAAAkDAAAADwMAAAA2
-        xAEAAk1TRnQBSQFMAgEBLgEAAYgBBgGIAQYBIAEAASABAAT/ASEBAAj/AUIBTQE2BwABNgMAASgDAAGA
+        xAEAAk1TRnQBSQFMAgEBLgEAAeABBgHgAQYBIAEAASABAAT/ASEBAAj/AUIBTQE2BwABNgMAASgDAAGA
         AwABgAEBAgABAQEAASAHAAED/wD/AP8A/wA1AAMGAQgDSgGKAyABLwMUARwDOAFeAwEBAlAAAwIBAwMS
         ARkDHgErAxoBJQMLAQ8DAAEB/wB9AAMZASMDXgHOAQABkwG9Af8BYgFJAWIB9gNcAeoBgAIAAf8DQgFz
         TAADCAELAjYBNQFYA1QBrwJeAVwBzgJbAVgBxgNOAZkDLwFJAwcBCf8AdQADMQFOA2IB7wEAAYABxgH/

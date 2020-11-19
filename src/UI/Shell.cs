@@ -161,6 +161,7 @@ namespace AITool
 
                 this.cb_send_errors.Checked = AppSettings.Settings.send_errors;
                 this.cbStartWithWindows.Checked = AppSettings.Settings.startwithwindows;
+                this.minimizeToTrayCheckbox.Checked = AppSettings.Settings.minimizetotray;
 
                 this.tb_username.Text = AppSettings.Settings.DefaultUserName.Trim();
                 this.tb_password.Text = Global.DecryptString(AppSettings.Settings.DefaultPasswordEncrypted);
@@ -877,7 +878,9 @@ namespace AITool
 
             if (this.WindowState == FormWindowState.Minimized)
             {
-                HideForm();
+                if(AppSettings.Settings.minimizetotray){
+                    HideForm();
+                };
             }
             else
             {
@@ -2756,6 +2759,7 @@ namespace AITool
             AppSettings.Settings.telegram_cooldown_minutes = Convert.ToDouble(this.tb_telegram_cooldown.Text.Trim());
             AppSettings.Settings.send_errors = this.cb_send_errors.Checked;
             AppSettings.Settings.startwithwindows = this.cbStartWithWindows.Checked;
+            AppSettings.Settings.minimizetotray = this.minimizeToTrayCheckbox.Checked;
 
             AppSettings.Settings.DefaultUserName = this.tb_username.Text.Trim();
             AppSettings.Settings.DefaultPasswordEncrypted = Global.EncryptString(this.tb_password.Text.Trim());
@@ -4668,6 +4672,7 @@ namespace AITool
             AppSettings.Settings.HistoryRestrictMinThresholdAtSource = this.restrictThresholdAtSourceToolStripMenuItem.Checked;
             AppSettings.SaveAsync();
         }
+
     }
 
     //enhanced TableLayoutPanel loads faster
