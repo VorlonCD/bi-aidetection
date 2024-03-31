@@ -1,13 +1,15 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Drawing;
 using System.IO;
 using System.Threading;
 
 namespace AITool
 {
 
-    public class ClsImageQueueItem
+    public class ClsImageQueueItem:IDisposable
     {
+        private bool disposedValue;
 
         public string image_path { get; set; } = "";
         public DateTime TimeAdded { get; set; } = DateTime.MinValue;
@@ -29,7 +31,7 @@ namespace AITool
         public int Height { get; set; } = 0;
         public float DPI { get; set; } = 0;
         public long FileSize { get; set; } = 0;
-        public byte[] ImageByteArray { get; set; } = null;
+        private byte[] _imageByteArray = null;
         private bool _valid { get; set; } = false;
         private bool _loaded { get; set; } = false;
         private bool _Temp { get; set; } = false;
@@ -83,18 +85,22 @@ namespace AITool
 
                     if (result2.Success)
                     {
-                        Stream inStream = this.ToStream();
+                        //using (FileStream fileStream = new FileStream(outputFilePath, FileMode.OpenOrCreate, FileAccess.ReadWrite))
+                        //{
+                        //    this._imageMemStream.Position = 0;
+                        //    fileStream.SetLength(this._imageMemStream.Length);
+                        //    int bytesRead = -1;
+                        //    byte[] bytes = new byte[bufferSize];
 
-                        using (FileStream fileStream = new FileStream(outputFilePath, FileMode.OpenOrCreate, FileAccess.ReadWrite))
+                        //    while ((bytesRead = this._imageMemStream.Read(bytes, 0, bufferSize)) > 0)
+                        //    {
+                        //        fileStream.Write(bytes, 0, bytesRead);
+                        //    }
+                        //}
+
+                        using (FileStream fileStream = new FileStream(outputFilePath, FileMode.Create, FileAccess.Write, FileShare.None))
                         {
-                            fileStream.SetLength(inStream.Length);
-                            int bytesRead = -1;
-                            byte[] bytes = new byte[bufferSize];
-
-                            while ((bytesRead = inStream.Read(bytes, 0, bufferSize)) > 0)
-                            {
-                                fileStream.Write(bytes, 0, bytesRead);
-                            }
+                            fileStream.Write(_imageByteArray, 0, _imageByteArray.Length);
                         }
 
                         ret = true;
@@ -133,18 +139,25 @@ namespace AITool
             }
 
         }
-        public MemoryStream ToStream()
+        public Bitmap ToBitmap()
+        {
+            return new Bitmap(this.ToMemStream());
+        }
+
+        public Image ToImage()
+        {
+            return Image.FromStream(this.ToMemStream());
+        }
+
+        public MemoryStream ToMemStream()
         {
             using var Trace = new Trace();  //This c# 8.0 using feature will auto dispose when the function is done.
-
-            MemoryStream ms = new MemoryStream();
 
             if (this.IsValid())
             {
                 try
                 {
-                    ms = new MemoryStream(this.ImageByteArray, false);
-                    ms.Flush();
+                    return new MemoryStream(this._imageByteArray);
                 }
                 catch (Exception ex)
                 {
@@ -155,7 +168,7 @@ namespace AITool
             {
                 AITOOL.Log($"Error: Cannot convert to MemoryStream because image is not valid.");
             }
-            return ms;
+            return new MemoryStream();
         }
         public void LoadImage()
         {
@@ -225,14 +238,15 @@ namespace AITool
                                         }
                                         else
                                         {
-                                            using MemoryStream ms = new MemoryStream();
+                                            //using MemoryStream ms = new MemoryStream();
                                             //fileStream.CopyTo(ms);
+                                            using MemoryStream ms = new MemoryStream();
                                             img.Save(ms, System.Drawing.Imaging.ImageFormat.Jpeg);
-                                            this.ImageByteArray = ms.ToArray();
-                                            this.FileSize = this.ImageByteArray.Length;
+                                            this._imageByteArray = ms.ToArray();
+                                            this.FileSize = this._imageByteArray.Length;
                                             this.FileLoadMS = sw.ElapsedMilliseconds;
                                             this._valid = true;
-                                            AITOOL.Log($"Trace: Image file is valid. Resolution={this.Width}x{this.Height}, LockMS={this.FileLockMS}ms (max={MaxWaitMS}ms), retries={this.FileLockErrRetryCnt}, size={Global.FormatBytes(ms.Length)}: {Path.GetFileName(this.image_path)}");
+                                            AITOOL.Log($"Trace: Image file is valid. Resolution={this.Width}x{this.Height}, LockMS={this.FileLockMS}ms (max={MaxWaitMS}ms), retries={this.FileLockErrRetryCnt}, size={Global.FormatBytes(this._imageByteArray.Length)}: {Path.GetFileName(this.image_path)}");
                                         }
                                         break;
                                     }
@@ -292,6 +306,38 @@ namespace AITool
             }
         }
 
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    // TODO: dispose managed state (managed objects)
+                    if (this._imageByteArray != null)
+                    {
+                        this._imageByteArray = null;
+                        AITOOL.Log($"Trace: {Path.GetFileName(this.image_path)} Lifetime was {(DateTime.Now - this.TimeCreated).TotalMilliseconds}");
+                    }
+                }
 
+                // TODO: free unmanaged resources (unmanaged objects) and override finalizer
+                // TODO: set large fields to null
+                disposedValue = true;
+            }
+        }
+
+        // // TODO: override finalizer only if 'Dispose(bool disposing)' has code to free unmanaged resources
+        // ~ClsImageQueueItem()
+        // {
+        //     // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+        //     Dispose(disposing: false);
+        // }
+
+        void IDisposable.Dispose()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
+        }
     }
 }

@@ -48,10 +48,10 @@
             System.Windows.Forms.DataVisualization.Charting.Title title1 = new System.Windows.Forms.DataVisualization.Charting.Title();
             notifyIcon = new System.Windows.Forms.NotifyIcon(components);
             TraycontextMenuStrip = new System.Windows.Forms.ContextMenuStrip(components);
-            exitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             pauseAllToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             resumeAllToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             pauseToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            exitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             tabControl1 = new System.Windows.Forms.TabControl();
             tabOverview = new System.Windows.Forms.TabPage();
             tableLayoutPanel14 = new DBLayoutPanel(components);
@@ -412,13 +412,6 @@
             TraycontextMenuStrip.Name = "TraycontextMenuStrip";
             TraycontextMenuStrip.Size = new System.Drawing.Size(134, 92);
             // 
-            // exitToolStripMenuItem
-            // 
-            exitToolStripMenuItem.Name = "exitToolStripMenuItem";
-            exitToolStripMenuItem.Size = new System.Drawing.Size(133, 22);
-            exitToolStripMenuItem.Text = "Exit";
-            exitToolStripMenuItem.Click += exitToolStripMenuItem_Click;
-            // 
             // pauseAllToolStripMenuItem
             // 
             pauseAllToolStripMenuItem.Name = "pauseAllToolStripMenuItem";
@@ -439,6 +432,13 @@
             pauseToolStripMenuItem.Size = new System.Drawing.Size(133, 22);
             pauseToolStripMenuItem.Text = "Pause...";
             pauseToolStripMenuItem.Click += pauseToolStripMenuItem_Click;
+            // 
+            // exitToolStripMenuItem
+            // 
+            exitToolStripMenuItem.Name = "exitToolStripMenuItem";
+            exitToolStripMenuItem.Size = new System.Drawing.Size(133, 22);
+            exitToolStripMenuItem.Text = "Exit";
+            exitToolStripMenuItem.Click += exitToolStripMenuItem_Click;
             // 
             // tabControl1
             // 
@@ -615,7 +615,7 @@
             tableLayoutPanel16.Name = "tableLayoutPanel16";
             tableLayoutPanel16.RowCount = 1;
             tableLayoutPanel16.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
-            tableLayoutPanel16.Size = new System.Drawing.Size(1096, 476);
+            tableLayoutPanel16.Size = new System.Drawing.Size(1096, 478);
             tableLayoutPanel16.TabIndex = 0;
             // 
             // tableLayoutPanel23
@@ -635,7 +635,7 @@
             tableLayoutPanel23.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 35F));
             tableLayoutPanel23.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
             tableLayoutPanel23.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 21F));
-            tableLayoutPanel23.Size = new System.Drawing.Size(762, 470);
+            tableLayoutPanel23.Size = new System.Drawing.Size(762, 472);
             tableLayoutPanel23.TabIndex = 7;
             // 
             // label8
@@ -643,7 +643,7 @@
             label8.AutoSize = true;
             label8.Dock = System.Windows.Forms.DockStyle.Top;
             label8.Font = new System.Drawing.Font("Segoe UI", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0);
-            label8.Location = new System.Drawing.Point(3, 238);
+            label8.Location = new System.Drawing.Point(3, 239);
             label8.Margin = new System.Windows.Forms.Padding(3);
             label8.Name = "label8";
             label8.Size = new System.Drawing.Size(756, 29);
@@ -670,7 +670,7 @@
             chartArea1.Name = "ChartArea1";
             chart_confidence.ChartAreas.Add(chartArea1);
             chart_confidence.Dock = System.Windows.Forms.DockStyle.Fill;
-            chart_confidence.Location = new System.Drawing.Point(3, 273);
+            chart_confidence.Location = new System.Drawing.Point(3, 274);
             chart_confidence.Name = "chart_confidence";
             series1.BorderWidth = 4;
             series1.ChartArea = "ChartArea1";
@@ -685,7 +685,7 @@
             series2.Name = "alert";
             chart_confidence.Series.Add(series1);
             chart_confidence.Series.Add(series2);
-            chart_confidence.Size = new System.Drawing.Size(756, 194);
+            chart_confidence.Size = new System.Drawing.Size(756, 195);
             chart_confidence.TabIndex = 8;
             // 
             // timeline
@@ -740,7 +740,7 @@
             timeline.Series.Add(series5);
             timeline.Series.Add(series6);
             timeline.Series.Add(series7);
-            timeline.Size = new System.Drawing.Size(756, 194);
+            timeline.Size = new System.Drawing.Size(756, 195);
             timeline.TabIndex = 6;
             // 
             // label7
@@ -770,7 +770,7 @@
             tableLayoutPanel17.RowStyles.Add(new System.Windows.Forms.RowStyle());
             tableLayoutPanel17.RowStyles.Add(new System.Windows.Forms.RowStyle());
             tableLayoutPanel17.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
-            tableLayoutPanel17.Size = new System.Drawing.Size(322, 470);
+            tableLayoutPanel17.Size = new System.Drawing.Size(322, 472);
             tableLayoutPanel17.TabIndex = 3;
             // 
             // chart1
@@ -809,7 +809,7 @@
             series8.Points.Add(dataPoint2);
             series8.Points.Add(dataPoint3);
             chart1.Series.Add(series8);
-            chart1.Size = new System.Drawing.Size(316, 412);
+            chart1.Size = new System.Drawing.Size(316, 414);
             chart1.TabIndex = 2;
             chart1.Text = "chart1";
             title1.Font = new System.Drawing.Font("Segoe UI", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0);
@@ -846,10 +846,10 @@
             tabHistory.Controls.Add(toolStrip1);
             tabHistory.Controls.Add(splitContainer2);
             tabHistory.Controls.Add(toolStripContainer1);
-            tabHistory.Location = new System.Drawing.Point(4, 24);
+            tabHistory.Location = new System.Drawing.Point(4, 22);
             tabHistory.Name = "tabHistory";
             tabHistory.Padding = new System.Windows.Forms.Padding(3);
-            tabHistory.Size = new System.Drawing.Size(1099, 492);
+            tabHistory.Size = new System.Drawing.Size(1099, 494);
             tabHistory.TabIndex = 0;
             tabHistory.Text = "History";
             tabHistory.UseVisualStyleBackColor = true;
@@ -1122,7 +1122,7 @@
             splitContainer2.Panel2.Controls.Add(lbl_objects);
             splitContainer2.Panel2.Controls.Add(pictureBox1);
             splitContainer2.Panel2MinSize = 300;
-            splitContainer2.Size = new System.Drawing.Size(1097, 433);
+            splitContainer2.Size = new System.Drawing.Size(1097, 461);
             splitContainer2.SplitterDistance = 284;
             splitContainer2.SplitterWidth = 2;
             splitContainer2.TabIndex = 4;
@@ -1135,7 +1135,7 @@
             groupBox8.Margin = new System.Windows.Forms.Padding(2);
             groupBox8.Name = "groupBox8";
             groupBox8.Padding = new System.Windows.Forms.Padding(2);
-            groupBox8.Size = new System.Drawing.Size(280, 429);
+            groupBox8.Size = new System.Drawing.Size(280, 457);
             groupBox8.TabIndex = 11;
             groupBox8.TabStop = false;
             groupBox8.Text = "History";
@@ -1148,7 +1148,7 @@
             folv_history.Margin = new System.Windows.Forms.Padding(2);
             folv_history.Name = "folv_history";
             folv_history.ShowGroups = false;
-            folv_history.Size = new System.Drawing.Size(276, 410);
+            folv_history.Size = new System.Drawing.Size(276, 438);
             folv_history.TabIndex = 10;
             folv_history.UseCellFormatEvents = true;
             folv_history.UseCompatibleStateImageBehavior = false;
@@ -1231,7 +1231,7 @@
             lbl_objects.Margin = new System.Windows.Forms.Padding(6, 0, 3, 0);
             lbl_objects.Name = "lbl_objects";
             lbl_objects.Padding = new System.Windows.Forms.Padding(6, 0, 0, 0);
-            lbl_objects.Size = new System.Drawing.Size(853, 20);
+            lbl_objects.Size = new System.Drawing.Size(883, 20);
             lbl_objects.TabIndex = 14;
             lbl_objects.Text = "No selection";
             lbl_objects.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
@@ -1242,7 +1242,7 @@
             pictureBox1.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom;
             pictureBox1.Location = new System.Drawing.Point(4, 23);
             pictureBox1.Name = "pictureBox1";
-            pictureBox1.Size = new System.Drawing.Size(849, 403);
+            pictureBox1.Size = new System.Drawing.Size(879, 431);
             pictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
             pictureBox1.TabIndex = 6;
             pictureBox1.TabStop = false;
@@ -1667,7 +1667,7 @@
             cmbcaminput.AutoCompleteMode = System.Windows.Forms.AutoCompleteMode.SuggestAppend;
             cmbcaminput.AutoCompleteSource = System.Windows.Forms.AutoCompleteSource.ListItems;
             cmbcaminput.FormattingEnabled = true;
-            cmbcaminput.Location = new System.Drawing.Point(21, 9);
+            cmbcaminput.Location = new System.Drawing.Point(21, 8);
             cmbcaminput.Margin = new System.Windows.Forms.Padding(21, 2, 21, 2);
             cmbcaminput.Name = "cmbcaminput";
             cmbcaminput.Size = new System.Drawing.Size(431, 21);
@@ -2111,7 +2111,7 @@
             cmbInput.AutoCompleteMode = System.Windows.Forms.AutoCompleteMode.SuggestAppend;
             cmbInput.AutoCompleteSource = System.Windows.Forms.AutoCompleteSource.ListItems;
             cmbInput.FormattingEnabled = true;
-            cmbInput.Location = new System.Drawing.Point(3, 12);
+            cmbInput.Location = new System.Drawing.Point(3, 11);
             cmbInput.Margin = new System.Windows.Forms.Padding(3, 2, 2, 2);
             cmbInput.Name = "cmbInput";
             cmbInput.Size = new System.Drawing.Size(664, 21);

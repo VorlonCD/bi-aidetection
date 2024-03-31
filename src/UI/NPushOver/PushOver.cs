@@ -259,7 +259,7 @@ namespace NPushover
 
                 if (CurImg != null && CurImg.IsValid())
                 {
-                    StreamContent imageParameter = new StreamContent(CurImg.ToStream());
+                    StreamContent imageParameter = new StreamContent(CurImg.ToMemStream());
                     imageParameter.Headers.ContentType = MediaTypeHeaderValue.Parse("image/jpeg");
                     parameters.Add(imageParameter, "attachment", Path.GetFileName(CurImg.image_path));
                 }

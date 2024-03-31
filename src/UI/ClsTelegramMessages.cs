@@ -174,7 +174,7 @@ namespace AITool
 
         private ValueTask TelegramBot_OnApiResponseReceived(ITelegramBotClient botClient, Telegram.Bot.Args.ApiResponseEventArgs args, CancellationToken cancellationToken = default)
         {
-            Log($"Trace: API response: {args.ResponseMessage}");
+            Log($"Trace: API response: {args.ResponseMessage.ToString().CleanString(",")}");
             return default;
         }
 

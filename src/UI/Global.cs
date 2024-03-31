@@ -52,7 +52,45 @@ namespace AITool
         public static IProgress<ClsMessage> progress = null;
 
         //this may speed up json serialization
-        public static DefaultContractResolver JSONContractResolver = null;
+        public static readonly DefaultContractResolver JSONContractResolver = new DefaultContractResolver
+        {
+            NamingStrategy = new CamelCaseNamingStrategy
+            {
+                ProcessDictionaryKeys = false,
+                OverrideSpecifiedNames = false,
+                ProcessExtensionDataNames = false
+            }
+
+            //Global.JSONContractResolver.NamingStrategy = new CamelCaseNamingStrategy();
+        };
+        public static readonly JsonSerializerSettings JSONSettingsPretty = new JsonSerializerSettings
+        {
+            Formatting = Formatting.Indented,
+            TypeNameHandling = TypeNameHandling.All,
+            PreserveReferencesHandling = PreserveReferencesHandling.Objects,
+            ContractResolver = JSONContractResolver,
+            //NullValueHandling = NullValueHandling.Ignore,
+            //DefaultValueHandling = DefaultValueHandling.Ignore,
+            //ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+            // Add other settings that may improve performance for your specific case
+        };
+
+        public static readonly JsonSerializerSettings JSONSettingsPerformance = new JsonSerializerSettings
+        {
+            Formatting = Formatting.None,
+            TypeNameHandling = TypeNameHandling.Auto,
+            PreserveReferencesHandling = PreserveReferencesHandling.None,
+            ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+            ConstructorHandling = ConstructorHandling.Default,
+            ObjectCreationHandling = ObjectCreationHandling.Auto,
+            NullValueHandling = NullValueHandling.Ignore,
+            MetadataPropertyHandling = MetadataPropertyHandling.Default,
+            ContractResolver = new CamelCasePropertyNamesContractResolver(),
+            //NullValueHandling = NullValueHandling.Ignore,
+            //DefaultValueHandling = DefaultValueHandling.Ignore,
+            //ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+            // Add other settings that may improve performance for your specific case
+        };
 
         /// <summary>
         ///     ''' Gets a value indicating whether the application is a windows service.
@@ -257,7 +295,8 @@ namespace AITool
                 return default(T);
             }
 
-            return JsonConvert.DeserializeObject<T>(JsonConvert.SerializeObject(source));
+            return JsonConvert.DeserializeObject<T>(JsonConvert.SerializeObject(source, JSONSettingsPerformance));
+
         }
 
         public static async Task<bool> IsPortOpenAsync(string Host, int port)
@@ -3216,7 +3255,7 @@ namespace AITool
 
             if (content != null)
             {
-                var json = JsonConvert.SerializeObject(content);
+                var json = Global.GetJSONString(content); //JsonConvert.SerializeObject(content);
                 httpContent = new StringContent(json, Encoding.UTF8, "application/json");
             }
 
@@ -3307,13 +3346,9 @@ namespace AITool
             TextWriter writer = null;
             try
             {
-                JsonSerializerSettings jset = new JsonSerializerSettings { };
-                jset.TypeNameHandling = TypeNameHandling.All;
-                jset.PreserveReferencesHandling = PreserveReferencesHandling.Objects;
-                jset.ContractResolver = Global.JSONContractResolver;
 
-                Ret = JsonConvert.SerializeObject(objectToWrite, Formatting.Indented, jset);
-                if (jset.Error == null)
+                Ret = JsonConvert.SerializeObject(objectToWrite, JSONSettingsPretty);
+                if (JSONSettingsPretty.Error == null)
                 {
                     if (Directory.Exists(Path.GetDirectoryName(filePath)))
                     {
@@ -3324,7 +3359,7 @@ namespace AITool
                 else
                 {
                     Ret = "";
-                    Log($"Error: While writing '{filePath}', got: " + jset.Error.ToString());
+                    Log($"Error: While writing '{filePath}', got: " + JSONSettingsPretty.Error.ToString());
                 }
             }
             catch (Exception ex)
@@ -3380,66 +3415,30 @@ namespace AITool
             return Ret;
 
         }
-        public static bool IsClassEqual(string clsjson, object cls2)
-        {
 
-            bool Ret = false;
-            try
-            {
-
-                JsonSerializerSettings jset = new JsonSerializerSettings { };
-                jset.TypeNameHandling = TypeNameHandling.All;
-                jset.PreserveReferencesHandling = PreserveReferencesHandling.Objects;
-                jset.ContractResolver = Global.JSONContractResolver;
-
-                string contents2 = JsonConvert.SerializeObject(cls2, Formatting.Indented, jset);
-                if (jset.Error == null)
-                {
-
-                    if (clsjson == contents2)
-                    {
-                        Ret = true;
-                    }
-                }
-                else
-                {
-                    Log($"Error: " + jset.Error.ToString());
-                }
-
-            }
-            catch (Exception ex)
-            {
-                Log($"Error: " + ex.Msg());
-            }
-            finally
-            {
-            }
-
-            return Ret;
-
-        }
-
-        public static string GetJSONString(object cls2, Newtonsoft.Json.Formatting formatting = Formatting.Indented, Newtonsoft.Json.TypeNameHandling handling = TypeNameHandling.Objects, PreserveReferencesHandling reference = PreserveReferencesHandling.Objects)
+        public static string GetJSONString(object cls2, Newtonsoft.Json.Formatting formatting = Formatting.Indented,
+                                                        Newtonsoft.Json.TypeNameHandling handling = TypeNameHandling.All,
+                                                        Newtonsoft.Json.PreserveReferencesHandling reference = PreserveReferencesHandling.Objects)
         {
 
             string Ret = "";
             try
             {
 
-                JsonSerializerSettings jset = new JsonSerializerSettings { };
-                jset.TypeNameHandling = handling;
-                jset.PreserveReferencesHandling = reference;
-                jset.ContractResolver = Global.JSONContractResolver;
+                JSONSettingsPretty.Formatting = formatting;
+                JSONSettingsPretty.TypeNameHandling = handling;
+                JSONSettingsPretty.PreserveReferencesHandling = reference;
+                JSONSettingsPretty.Error = null;
 
-                string contents2 = JsonConvert.SerializeObject(cls2, formatting, jset);
-                if (jset.Error == null)
+                string contents2 = JsonConvert.SerializeObject(cls2, formatting, JSONSettingsPretty);
+
+                if (JSONSettingsPretty.Error == null)
                 {
-
                     Ret = contents2;
                 }
                 else
                 {
-                    Log($"Error: " + jset.Error.ToString());
+                    Log($"Error: " + JSONSettingsPretty.Error.ToString());
                 }
 
             }
@@ -3463,13 +3462,12 @@ namespace AITool
 
             try
             {
+                //JsonSerializerSettings jset = new JsonSerializerSettings { };
+                //jset.TypeNameHandling = TypeNameHandling.All;
+                //jset.PreserveReferencesHandling = PreserveReferencesHandling.Objects;
+                //jset.ContractResolver = Global.JSONContractResolver;
 
-                JsonSerializerSettings jset = new JsonSerializerSettings { };
-                jset.TypeNameHandling = TypeNameHandling.All;
-                jset.PreserveReferencesHandling = PreserveReferencesHandling.Objects;
-                jset.ContractResolver = Global.JSONContractResolver;
-
-                Ret = JsonConvert.DeserializeObject<T>(JSONString, jset);
+                Ret = JsonConvert.DeserializeObject<T>(JSONString, JSONSettingsPretty);
             }
             catch (Exception ex)
             {

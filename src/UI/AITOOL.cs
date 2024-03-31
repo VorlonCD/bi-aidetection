@@ -78,7 +78,7 @@ namespace AITool
         public static object ImageLoopLockObject = new object();
 
         //thread safe dictionary to prevent more than one file being processed at one time
-        public static ConcurrentDictionary<string, ClsImageQueueItem> detection_dictionary = new ConcurrentDictionary<string, ClsImageQueueItem>();
+        public static ConcurrentDictionary<string, DateTime> image_detection_dictionary = new ConcurrentDictionary<string, DateTime>();
 
 
         public static Dictionary<string, ClsFileSystemWatcher> watchers = new Dictionary<string, ClsFileSystemWatcher>();
@@ -117,8 +117,7 @@ namespace AITool
             {
                 using var Trace = new Trace();  //This c# 8.0 using feature will auto dispose when the function is done.
 
-                Global.JSONContractResolver = new DefaultContractResolver();
-                Global.JSONContractResolver.NamingStrategy = new CamelCaseNamingStrategy();
+
 
                 //initialize log manager with basic settings so we can start getting output if needed
                 if (Global.IsService)
@@ -497,7 +496,7 @@ namespace AITool
                 try
                 {
                     DecoderOptions dc = new DecoderOptions();
-                    using (SixLabors.ImageSharp.Image image = SixLabors.ImageSharp.Image.Load(img.ImageByteArray))  //, out IImageFormat format))
+                    using (SixLabors.ImageSharp.Image image = SixLabors.ImageSharp.Image.Load(img.ToMemStream()))  //, out IImageFormat format))
                     {
                         image.Mutate(i => i.Crop(SixLabors.ImageSharp.Rectangle.FromLTRB(cropArea.Left, cropArea.Top, cropArea.Right, cropArea.Bottom)));
 
@@ -1596,13 +1595,13 @@ namespace AITool
                         if ((DateTime.Now - LastCleanDupesTime).TotalMinutes >= 60)
                         {
                             int cnt = 0;
-                            foreach (KeyValuePair<string, ClsImageQueueItem> kvPair in detection_dictionary)
+                            foreach (KeyValuePair<string, DateTime> kvPair in image_detection_dictionary)
                             {
-                                if ((DateTime.Now - kvPair.Value.TimeAdded).TotalMinutes >= 30)
+                                if ((DateTime.Now - kvPair.Value).TotalMinutes >= 30)
                                 {   // Remove expired item.
                                     cnt++;
-                                    ClsImageQueueItem removedItem;
-                                    detection_dictionary.TryRemove(kvPair.Key, out removedItem);
+                                    //ClsImageQueueItem removedItem;
+                                    image_detection_dictionary.TryRemove(kvPair.Key, out _);
                                 }
                             }
 
@@ -1643,7 +1642,7 @@ namespace AITool
                 try
                 {
                     //make sure we are not processing a duplicate file...
-                    if (detection_dictionary.ContainsKey(Filename.ToLower()))
+                    if (image_detection_dictionary.ContainsKey(Filename.ToLower()))
                     {
                         Log("Skipping image because of duplicate Created File Event: " + Filename);
                     }
@@ -1669,7 +1668,7 @@ namespace AITool
                                         Log("Debug: ");
                                         Log($"Debug: ====================== Adding new image to queue (Count={ImageProcessQueue.Count + 1}): " + Filename, "", cam, Filename);
                                         ClsImageQueueItem CurImg = new ClsImageQueueItem(Filename, qsize);
-                                        detection_dictionary.TryAdd(Filename.ToLower(), CurImg);
+                                        image_detection_dictionary.TryAdd(Filename.ToLower(), DateTime.Now);
                                         ImageProcessQueue.Enqueue(CurImg);
                                         scalc.AddToCalc(qsize);
                                         Global.SendMessage(MessageType.ImageAddedToQueue);
@@ -2196,7 +2195,7 @@ namespace AITool
 
                     using MultipartFormDataContent request = new MultipartFormDataContent();
 
-                    using StreamContent sc = new StreamContent(CurImg.ToStream());
+                    using StreamContent sc = new StreamContent(CurImg.ToMemStream());
 
                     request.Add(sc, "image", Path.GetFileName(CurImg.image_path));
 
@@ -2414,8 +2413,8 @@ namespace AITool
 
                     //Dictionary<string, byte[]> dict = new Dictionary<string, byte[]>();
                     Dictionary<string, string> dict = new Dictionary<string, string>();
-                    dict.Add("image", CurImg.ToStream().ConvertToBase64());
-                    string json = JsonConvert.SerializeObject((object)dict);
+                    dict.Add("image", CurImg.ToMemStream().ConvertToBase64());
+                    string json = Global.GetJSONString((object)dict); //JsonConvert.SerializeObject((object)dict);
                     //byte[] body = Encoding.UTF8.GetBytes(json);
                     //ByteArrayContent content = new ByteArrayContent(body);
                     //HttpContent content = Global.CreateHttpContentString(dict);
@@ -2690,9 +2689,7 @@ namespace AITool
 
                     long FileSize = new FileInfo(CurImg.image_path).Length;
 
-
-                    cdr.Data = CurImg.ToStream().ConvertToBase64();
-
+                    cdr.Data = CurImg.ToMemStream().ConvertToBase64();
 
                     using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, AiUrl.ToString()))
                     {
@@ -2864,7 +2861,7 @@ namespace AITool
                     //    await fileStream.ReadAsync(data, 0, (int)fileStream.Length);
                     //}
 
-                    rekognitionImage.Bytes = CurImg.ToStream();
+                    rekognitionImage.Bytes = CurImg.ToMemStream();
 
                     dlr.Image = rekognitionImage;
 
@@ -2973,7 +2970,7 @@ namespace AITool
                     //    await fileStream.ReadAsync(data, 0, (int)fileStream.Length);
                     //}
 
-                    rekognitionImage.Bytes = CurImg.ToStream();
+                    rekognitionImage.Bytes = CurImg.ToMemStream();
 
                     dlr.Image = rekognitionImage;
                     dlr.Attributes.Add("ALL");

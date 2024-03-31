@@ -813,19 +813,13 @@ namespace AITool
                     AQI.cam.UpdateImageResolutions(AQI.CurImg);
 
                     Stopwatch sw = Stopwatch.StartNew();
-                    using (Bitmap img = new Bitmap(AQI.CurImg.ToStream()))
+
+                    //using MemoryStream ms = AQI.CurImg.ToStream();
+
+                    using (Bitmap img = AQI.CurImg.ToBitmap())
                     {
                         using (Graphics g = Graphics.FromImage(img))
                         {
-                            //g.InterpolationMode = InterpolationMode.HighQualityBicubic;
-                            //g.SmoothingMode = SmoothingMode.HighQuality;
-                            //g.PixelOffsetMode = PixelOffsetMode.HighQuality;
-                            ////http://csharphelper.com/blog/2014/09/understand-font-aliasing-issues-in-c/
-                            //g.TextRenderingHint = TextRenderingHint.SingleBitPerPixelGridFit;
-
-
-                            //System.Drawing.Color color = new System.Drawing.Color();
-
                             if (AQI.Hist != null && !string.IsNullOrEmpty(AQI.Hist.PredictionsJSON))
                             {
                                 List<ClsPrediction> predictions = AQI.Hist.Predictions();
@@ -1531,7 +1525,8 @@ namespace AITool
                                 //upload image to Telegram servers and send to first chat
                                 Log($"Debug:      uploading image to chat \"{chatid.ReplaceChars('*')}\"", this.CurSrv, AQI.cam, AQI.CurImg);
                                 lastchatid = chatid;
-                                Telegram.Bot.Types.Message message = await AITOOL.Telegram.SendPhotoAsync(chatid, AQI.CurImg.ToStream(), "", AQI.CurImg.image_path, Caption);
+
+                                Telegram.Bot.Types.Message message = await AITOOL.Telegram.SendPhotoAsync(chatid, AQI.CurImg.ToMemStream(), "", AQI.CurImg.image_path, Caption);
 
                                 string file_id = message.Photo[0].FileId; //get file_id of uploaded image
 

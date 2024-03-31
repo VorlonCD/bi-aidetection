@@ -4027,10 +4027,10 @@ namespace AITool
                     {
                         this.lbl_objects.Text = $"Loading Image {filename}...";
 
-                        ClsImageQueueItem imgq = new ClsImageQueueItem(filename, 0);
+                        using ClsImageQueueItem imgq = new ClsImageQueueItem(filename, 0);
                         if (imgq.IsValid())
                         {
-                            this.pictureBox1.BackgroundImage = Image.FromStream(imgq.ToStream()); //load actual image as background, so that an overlay can be added as the image
+                            this.pictureBox1.BackgroundImage = imgq.ToImage(); //load actual image as background, so that an overlay can be added as the image
                         }
                         this.showHideMask();
                         this.lbl_objects.Text = hist.Detections;

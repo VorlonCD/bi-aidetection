@@ -319,11 +319,10 @@ namespace AITool
 
                                     if (CurImg != null)
                                     {
-                                        //using FileStream image_data =  System.IO.File.OpenRead(CurImg.image_path);
 
                                         ma = new MqttApplicationMessageBuilder()
                                              .WithTopic(this.LastTopic)
-                                             .WithPayload(CurImg.ToStream())
+                                             .WithPayload(CurImg.ToMemStream())
                                              .WithQualityOfServiceLevel(MqttQualityOfServiceLevel.AtLeastOnce)
                                              .WithRetainFlag(this.LastRetain)
                                              .Build();

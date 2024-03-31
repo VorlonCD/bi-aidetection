@@ -11,7 +11,7 @@ using static AITool.AITOOL;
 
 namespace AITool
 {
-    public partial class Frm_ObjectDetail : Form
+    public partial class Frm_ObjectDetail:Form
     {
         public List<ClsPrediction> PredictionObjectDetailsList = null;
         public ClsPrediction CurPred = null;
@@ -67,7 +67,7 @@ namespace AITool
             if (!String.IsNullOrEmpty(this.ImageFileName) && this.ImageFileName.Contains("\\") && File.Exists(this.ImageFileName))
             {
                 OriginalBMP = new ClsImageQueueItem(this.ImageFileName, 0);
-                this.pictureBox1.Image = Image.FromStream(OriginalBMP.ToStream()); //load actual image as background, so that an overlay can be added as the image
+                this.pictureBox1.Image = OriginalBMP.ToImage(); //load actual image as background, so that an overlay can be added as the image
                 _lastimage = this.ImageFileName;
             }
 
