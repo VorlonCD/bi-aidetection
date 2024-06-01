@@ -462,13 +462,13 @@ namespace AITool
 
 
 
-            if (this.Starting.ReadFullFence())
+            if (this.Starting)
             {
                 Log("Already starting?");
                 return false;
             }
 
-            this.Starting.WriteFullFence(true);
+            this.Starting= true;
 
             using var Trace = new Trace();  //This c# 8.0 using feature will auto dispose when the function is done.
 
@@ -866,7 +866,7 @@ namespace AITool
             }
             finally
             {
-                this.Starting.WriteFullFence(false);
+                this.Starting = false;
                 //this.PrintDeepStackError();
             }
 
@@ -887,13 +887,13 @@ namespace AITool
         public bool StopDeepstack()
         {
 
-            if (this.Stopping.ReadFullFence())
+            if (this.Stopping)
             {
                 Log("Already stopping?");
                 return false;
             }
 
-            this.Stopping.WriteFullFence(true);
+            this.Stopping= true;
 
             using var Trace = new Trace();  //This c# 8.0 using feature will auto dispose when the function is done.
 
@@ -932,7 +932,7 @@ namespace AITool
 
             this.IsStarted = false;
 
-            this.Stopping.WriteFullFence(false);
+            this.Stopping = false;
 
             this.HasError = !Ret;
 

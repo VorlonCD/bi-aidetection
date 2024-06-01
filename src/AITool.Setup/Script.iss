@@ -135,11 +135,11 @@ function InitializeSetup(): Boolean;
 var
   ErrorCode: Integer;
 begin
-    if not IsDotNetInstalled('Microsoft.NETCore.App 6.0.') then begin
-        MsgBox('AITOOL requires Microsoft .NET 6.0'#13#13
-            'https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/runtime-desktop-6.0.16-windows-x64-installer,'#13
+    if not IsDotNetInstalled('Microsoft.NETCore.App 8.0.') then begin
+        MsgBox('AITOOL requires Microsoft .NET 8.0'#13#13
+            'https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/runtime-desktop-8.0.4-windows-x64-installer,'#13
             '...and then re-run the MyApp setup program.', mbInformation, MB_OK);
-		Exec('explorer', 'https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/runtime-desktop-6.0.16-windows-x64-installer', '', SW_SHOW, ewNoWait, ErrorCode);
+		Exec('explorer', 'https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/runtime-desktop-8.0.4-windows-x64-installer', '', SW_SHOW, ewNoWait, ErrorCode);
         result := false;
     end else
         result := true;

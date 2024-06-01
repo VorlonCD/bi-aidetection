@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyVersion>1.0.23.8918</AssemblyVersion>
+    <FileVersion>1.0.23.8918</FileVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\UI\ThreadSafe.cs" Link="ThreadSafe.cs" />
+    <Compile Include="..\UI\ThreadSafe_OLD.cs" Link="ThreadSafe_OLD.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+  </ItemGroup>
+
+</Project>

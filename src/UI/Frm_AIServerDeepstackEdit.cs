@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -35,15 +36,15 @@ namespace AITool
                 this.tb_URL.Enabled = true;
 
             this.tb_ActiveTimeRange.Text = this.CurURL.ActiveTimeRange;
-            this.chk_Enabled.Checked = this.CurURL.Enabled.ReadFullFence();
+            this.chk_Enabled.Checked = this.CurURL.Enabled;
             this.tb_ApplyToCams.Text = this.CurURL.Cameras;
             this.tb_ImagesPerMonth.Text = this.CurURL.MaxImagesPerMonth.ToString();
-            this.cb_ImageAdjustProfile.Text = this.CurURL.ImageAdjustProfile;
+            //this.cb_ImageAdjustProfile.Text = this.CurURL.ImageAdjustProfile;
             this.linkHelpURL.Text = this.CurURL.HelpURL;
             this.tb_Lower.Text = this.CurURL.Threshold_Lower.ToString();
             this.tb_Upper.Text = this.CurURL.Threshold_Upper.ToString();
             this.tb_timeout.Text = this.CurURL.HttpClientTimeoutSeconds.ToString();
-            this.labelTimeout.Text = $"Timeout Seconds Override (Default={this.CurURL.GetTimeout().TotalSeconds}):";
+            //this.labelTimeout.Text = $"Timeout Seconds Override (Default={this.CurURL.GetTimeout().TotalSeconds}):";
 
             this.cb_RefinementServer.Checked = this.CurURL.UseAsRefinementServer;
             this.tb_RefinementObjects.Text = this.CurURL.RefinementObjects;
@@ -57,14 +58,28 @@ namespace AITool
 
             this.cb_IgnoreOffline.Checked = this.CurURL.IgnoreOfflineError;
 
+            this.cb_AllowAIServerBasedQueue.Checked = this.CurURL.AllowAIServerBasedQueue;
+
+            this.tb_MaxQueueLength.Text = this.CurURL.AIMaxQueueLength.ToString();
+
+            this.tb_SkipIfImgQueueLengthLarger.Text = this.CurURL.SkipIfImgQueueLengthLarger.ToString();
+
+            this.tb_SkipIfAIQueueTimeOverSecs.Text = this.CurURL.SkipIfAIQueueTimeOverSecs.ToString();
+
             List<string> linked = this.CurURL.LinkedResultsServerList.SplitStr(",;|");
+
+
 
             //Add all servers except current one and refinement server
             int idx = 0;
+            //make a case insensitive hashset:
+            HashSet<string> dupes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             foreach (ClsURLItem url in AppSettings.Settings.AIURLList)
             {
-                if (!url.UseAsRefinementServer && !string.Equals(this.CurURL.ToString(), url.ToString(), StringComparison.OrdinalIgnoreCase))
+
+                if (url.Enabled && !dupes.Contains(url.ToString()) && !url.UseAsRefinementServer && !string.Equals(this.CurURL.ToString(), url.ToString(), StringComparison.OrdinalIgnoreCase))
                 {
+                    dupes.Add(url.ToString());
                     this.checkedComboBoxLinked.Items.Add(url);
                     if (Global.IsInList(url.ToString(), this.CurURL.LinkedResultsServerList, TrueIfEmpty: false))
                         this.checkedComboBoxLinked.SetItemChecked(idx, true);
@@ -73,16 +88,24 @@ namespace AITool
 
             }
 
-            foreach (ClsImageAdjust ia in AppSettings.Settings.ImageAdjustProfiles)
-                this.cb_ImageAdjustProfile.Items.Add(ia.Name);
+            //foreach (ClsImageAdjust ia in AppSettings.Settings.ImageAdjustProfiles)
+            //    this.cb_ImageAdjustProfile.Items.Add(ia.Name);
 
-            this.cb_ImageAdjustProfile.SelectedIndex = this.cb_ImageAdjustProfile.Items.IndexOf(this.CurURL.DefaultURL);
+            //this.cb_ImageAdjustProfile.SelectedIndex = this.cb_ImageAdjustProfile.Items.IndexOf(this.CurURL.DefaultURL);
 
             Global_GUI.GroupboxEnableDisable(groupBox1, chk_Enabled);
             Global_GUI.GroupboxEnableDisable(groupBoxRefine, cb_RefinementServer);
             Global_GUI.GroupboxEnableDisable(groupBoxLinked, cb_LinkedServers);
+            Global_GUI.GroupboxEnableDisable(gb_AIServerQueue, cb_AllowAIServerBasedQueue);
 
 
+        }
+
+        private void UpdateStats()
+        {
+            this.lbl_QueueLengthStats.Text = $"{this.CurURL.AIQueueLengthCalcs.ToStringShort()}";
+            this.lbl_QueueTimeStats.Text = $"{this.CurURL.AIQueueTimeCalcs.ToStringShort()}";
+            this.lbl_ImgQueueStats.Text = $"{AITOOL.scalc.ToStringShort()}";
         }
 
         private void Frm_AIServerDeepstackEdit_FormClosing(object sender, FormClosingEventArgs e)
@@ -133,13 +156,13 @@ namespace AITool
             this.CurURL.url = this.tb_URL.Text.Trim();
             this.CurURL.Name = this.tb_Name.Text.Trim();
             this.CurURL.ActiveTimeRange = this.tb_ActiveTimeRange.Text.Trim();
-            this.CurURL.Enabled.WriteFullFence(this.chk_Enabled.Checked);
+            this.CurURL.Enabled = this.chk_Enabled.Checked;
             this.CurURL.Cameras = this.tb_ApplyToCams.Text.Trim();
-            this.CurURL.ImageAdjustProfile = this.cb_ImageAdjustProfile.Text;
-            this.CurURL.MaxImagesPerMonth = Convert.ToInt32(this.tb_ImagesPerMonth.Text.Trim());
+            //this.CurURL.ImageAdjustProfile = this.cb_ImageAdjustProfile.Text;
+            this.CurURL.MaxImagesPerMonth = this.tb_ImagesPerMonth.Text.ToInt();
 
-            this.CurURL.Threshold_Lower = Convert.ToInt32(this.tb_Lower.Text.Trim());
-            this.CurURL.Threshold_Upper = Convert.ToInt32(this.tb_Upper.Text.Trim());
+            this.CurURL.Threshold_Lower = this.tb_Lower.Text.ToInt();
+            this.CurURL.Threshold_Upper = this.tb_Upper.Text.ToInt();
 
             this.CurURL.RefinementObjects = this.tb_RefinementObjects.Text.Trim();
             this.CurURL.UseAsRefinementServer = this.cb_RefinementServer.Checked;
@@ -155,12 +178,20 @@ namespace AITool
 
             this.CurURL.UseOnlyAsLinkedServer = this.cb_OnlyLinked.Checked;
 
-            this.CurURL.HttpClientTimeoutSeconds = Convert.ToInt32(this.tb_timeout.Text.Trim());
+            this.CurURL.HttpClientTimeoutSeconds = this.tb_timeout.Text.ToInt();
 
             this.CurURL.IgnoreOfflineError = this.cb_IgnoreOffline.Checked;
 
-            if (!string.IsNullOrWhiteSpace(this.tb_LinkedRefineTimeout.Text) && Convert.ToInt32(this.tb_LinkedRefineTimeout.Text.Trim()) >= 20)
-                AppSettings.Settings.MaxWaitForAIServerMS = Convert.ToInt32(this.tb_LinkedRefineTimeout.Text.Trim());
+            this.CurURL.AllowAIServerBasedQueue = this.cb_AllowAIServerBasedQueue.Checked;
+
+            this.CurURL.AIMaxQueueLength = this.tb_MaxQueueLength.Text.ToInt();
+
+            this.CurURL.SkipIfImgQueueLengthLarger = this.tb_SkipIfImgQueueLengthLarger.Text.ToInt();
+
+            this.CurURL.SkipIfAIQueueTimeOverSecs = this.tb_SkipIfAIQueueTimeOverSecs.Text.ToInt();
+
+            if (!string.IsNullOrWhiteSpace(this.tb_LinkedRefineTimeout.Text) && this.tb_LinkedRefineTimeout.Text.ToInt() >= 20)
+                AppSettings.Settings.MaxWaitForAIServerMS = this.tb_LinkedRefineTimeout.Text.ToInt();
 
             AppSettings.Settings.MaxWaitForAIServerTimeoutError = this.cb_TimeoutError.Checked;
 
@@ -240,11 +271,7 @@ namespace AITool
                     //make sure not stuck in use for the test:
                     foreach (var url in result.OutURLs)
                     {
-                        if (url.InUse.ReadFullFence())
-                        {
-                            url.FullTimeMS = (int)(DateTime.Now - url.LastUsedTime.Read()).TotalMilliseconds;
-                            url.InUse.WriteFullFence(false);
-                        }
+                        url.DecrementQueue();
                     }
 
                     btTest.Enabled = true;
@@ -258,13 +285,13 @@ namespace AITool
                         frm.ImageFileName = tpth;
                         frm.Show();
 
-                        MessageBox.Show($"Success! {this.CurURL.LastResultMessage}", "Success");
+                        MessageBox.Show($"Success! Time={result.TimeMS}ms: {this.CurURL.LastResultMessage}", "Success");
                     }
                     else
-                        MessageBox.Show($"Error! {this.CurURL.LastResultMessage}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        MessageBox.Show($"Error! Time={result.TimeMS}ms: {this.CurURL.LastResultMessage}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
 
-                    this.CurURL.ErrCount.WriteUnfenced(0);
-                    this.CurURL.CurErrCount.WriteUnfenced(0);
+                    this.CurURL.ErrCount = 0;
+                    this.CurURL.CurErrCount = 0;
 
                 }
                 else
@@ -278,14 +305,23 @@ namespace AITool
 
         private void bt_clear_Click(object sender, EventArgs e)
         {
-            this.CurURL.ErrCount.WriteUnfenced(0);
-            this.CurURL.CurErrCount.WriteUnfenced(0);
-            this.CurURL.AITimeCalcs = new MovingCalcs(250, "Images", true);
+            this.CurURL.ErrCount = 0;
+            this.CurURL.CurErrCount = 0;
+            this.CurURL.ErrsInRowCount = 0;
+            this.CurURL.ErrDisabled = false;
+            this.CurURL.AITimeCalcs = new MovingCalcs(500, "AITime", true);
+            this.CurURL.AIQueueLengthCalcs = new MovingCalcs(500, "AIQueueLength", false);
+            this.CurURL.AIQueueTimeCalcs = new MovingCalcs(500, "AIQueueTime", true);
             this.CurURL.LastResultMessage = "";
+            this.CurURL.NotReadyReason = "";
+            this.CurURL.LastSkippedReason = "";
             this.CurURL.LastTimeMS = 0;
-            this.CurURL.LastUsedTime.Write(DateTime.MinValue);
+            this.CurURL.LastTestedTime = new ThreadSafe.DateTime(DateTime.MinValue, AppSettings.Settings.DateFormat);
+            this.CurURL.LastUsedTime = new ThreadSafe.DateTime(DateTime.MinValue, AppSettings.Settings.DateFormat);
             this.CurURL.LastResultSuccess = false;
-            this.CurURL.InUse.WriteFullFence(false);
+            this.CurURL.InUse = false;
+            this.CurURL.AIQueueLength = 0;
+            this.CurURL.AIQueueSkippedCount = 0;
 
             MessageBox.Show("Cleared error counts and stats.");
 
@@ -313,6 +349,16 @@ namespace AITool
         {
             if (cb_OnlyLinked.Checked && cb_LinkedServers.Checked)
                 cb_LinkedServers.Checked = false;
+        }
+
+        private void cb_AllowAIServerBasedQueue_CheckedChanged(object sender, EventArgs e)
+        {
+            Global_GUI.GroupboxEnableDisable(gb_AIServerQueue, cb_AllowAIServerBasedQueue);
+        }
+
+        private void timer1_Tick(object sender, EventArgs e)
+        {
+            UpdateStats();
         }
     }
 }

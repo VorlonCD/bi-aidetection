@@ -1134,6 +1134,7 @@ namespace AITool
                      tmp.Equals("cow") ||
                      tmp.Equals("rabbit") ||
                      tmp.Equals("raccoon") ||
+                     tmp.Equals("racoon") ||
                      tmp.Equals("fox") ||
                      tmp.Equals("skunk") ||
                      tmp.Equals("squirrel") ||

@@ -1,7 +1,8 @@
-﻿using Newtonsoft.Json;
-
-using System;
+﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+
+using Newtonsoft.Json;
 
 
 namespace AITool
@@ -10,7 +11,7 @@ namespace AITool
     {
 
         [JsonIgnore]
-        public Queue<Decimal> samples = new Queue<Decimal>();
+        public ConcurrentQueue<Decimal> samples = new ConcurrentQueue<Decimal>();
         public int windowSize = 250;
         public int lastDayOfYear = 0;
         public int lastMonth = 0;
@@ -27,12 +28,13 @@ namespace AITool
         [JsonIgnore]
         public string MaxS { get { return this.Max.ToString("#####0"); } }
         [JsonIgnore]
-        public int Count { get; set; } = 0;
-        public int CountToday { get; set; } = 0;
-        public int CountMonth { get; set; } = 0;
+        public ThreadSafe.Integer Count { get; set; } = 0;
+        public ThreadSafe.Integer CountToday { get; set; } = 0;
+        public ThreadSafe.Integer CountMonth { get; set; } = 0;
         public Decimal Current { get; set; } = 0;
         [JsonIgnore]
-        public DateTime TimeInitialized { get; set; } = DateTime.Now;
+        public ThreadSafe.DateTime TimeInitialized { get; set; } = DateTime.Now;
+        public ThreadSafe.DateTime LastMaxTime { get; set; } = DateTime.MinValue;
         public string ItemName { get; set; } = "Items";
         public bool IsTime { get; set; } = false;
         public string ToStringFormat { get; set; } = "#####0";
@@ -60,6 +62,7 @@ namespace AITool
             this.Current = 0;
             this.TimeInitialized = DateTime.Now;
             this.sampleAccumulator = 0;
+            this.LastMaxTime = DateTime.MinValue;
 
         }
         public double ItemsPerMinute()
@@ -120,37 +123,50 @@ namespace AITool
         public void AddToCalc(Decimal newSample)
         {
 
-
-            if (newSample > 0)
+            lock (this.samples)
             {
-                this.Current = newSample;
-
-                this.Count++;
-                this.CountToday++;
-                this.CountMonth++;
-
-                this.UpdateDate(false);
-
-                this.sampleAccumulator += newSample;
-                this.samples.Enqueue(newSample);
-
-                if (this.samples.Count > this.windowSize)
+                if (newSample > 0)
                 {
-                    this.sampleAccumulator -= this.samples.Dequeue();
-                }
+                    this.Current = newSample;
 
-                if (this.sampleAccumulator > 0)  //divide by 0?
-                    this.Avg = this.sampleAccumulator / this.samples.Count;
+                    this.Count++;
+                    this.CountToday++;
+                    this.CountMonth++;
 
-                if (this.Min == 0)
-                {
-                    this.Min = newSample;
+                    this.UpdateDate(false);
+
+                    this.sampleAccumulator += newSample;
+                    this.samples.Enqueue(newSample);
+
+                    if (this.samples.Count > this.windowSize)
+                    {
+                        //this.sampleAccumulator -= this.samples.Dequeue();
+                        if (samples.TryDequeue(out decimal dequeuedSample))
+                        {
+                            sampleAccumulator -= dequeuedSample;
+                        }
+                    }
+
+
+                    if (this.sampleAccumulator > 0)  //divide by 0?
+                        this.Avg = this.sampleAccumulator / this.samples.Count;
+
+                    if (this.Min == 0)
+                    {
+                        this.Min = newSample;
+                    }
+                    else
+                    {
+                        this.Min = Math.Min(newSample, this.Min);
+                    }
+                    //this.Max = Math.Max(newSample, this.Max);
+                    if (newSample > this.Max)
+                    {
+                        this.Max = newSample;
+                        this.LastMaxTime = DateTime.Now;
+                    }
+
                 }
-                else
-                {
-                    this.Min = Math.Min(newSample, this.Min);
-                }
-                this.Max = Math.Max(newSample, this.Max);
 
             }
 
@@ -163,6 +179,14 @@ namespace AITool
                 ms = "ms";
 
             return $"{this.Count} {this.ItemName} | {this.CountToday} today | {this.CountMonth} Month | {this.ItemsPerMinute().ToString("#####0")}/MIN (Min={this.Min.ToString(this.ToStringFormat)}{ms},Max={this.Max.ToString(this.ToStringFormat)}{ms},Avg={this.Avg.ToString(this.ToStringFormat)}{ms},Last={this.Current.ToString(this.ToStringFormat)}{ms})";
+        }
+        public string ToStringShort()
+        {
+            string ms = "";
+            if (this.IsTime)
+                ms = "ms";
+
+            return $"Cnt={this.Count},Min={this.Min.ToString(this.ToStringFormat)}{ms},Max={this.Max.ToString(this.ToStringFormat)}{ms},Avg={this.Avg.ToString(this.ToStringFormat)}{ms},Last={this.Current.ToString(this.ToStringFormat)}{ms}";
         }
     }
 

@@ -78,6 +78,7 @@ namespace AITool
             FOLV_AIServers.UseCompatibleStateImageBehavior = false;
             FOLV_AIServers.View = System.Windows.Forms.View.Details;
             FOLV_AIServers.VirtualMode = true;
+            FOLV_AIServers.FormatCell += FOLV_AIServers_FormatCell;
             FOLV_AIServers.FormatRow += FOLV_AIServers_FormatRow;
             FOLV_AIServers.SelectionChanged += FOLV_AIServers_SelectionChanged;
             FOLV_AIServers.SelectedIndexChanged += FOLV_AIServers_SelectedIndexChanged;

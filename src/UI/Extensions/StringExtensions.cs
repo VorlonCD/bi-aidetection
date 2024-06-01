@@ -1,12 +1,9 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Security;
 using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 using Microsoft.Win32.SafeHandles;
 
@@ -100,10 +97,39 @@ namespace AITool
 
 
 
+        //public static string Prepend(this string input, string valueToPrepend, int maxItems = 8, char separator = ',')
+        //{
+        //    string val = valueToPrepend.Trim(separator, ' ');
+
+        //    if (string.IsNullOrWhiteSpace(val))
+        //        return input;
+
+        //    var resultBuilder = new StringBuilder();
+        //    var uniqueValues = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        //    uniqueValues.Add(val);
+        //    resultBuilder.Append(val);
+
+        //    int itemCount = 1; // Start from 1 as we have already added the valueToPrepend
+
+        //    foreach (var item in input.Split(separator).Select(s => s.Trim()))
+        //    {
+        //        if (!string.IsNullOrEmpty(item) && !uniqueValues.Contains(item) && itemCount < maxItems)
+        //        {
+        //            resultBuilder.Append(separator);
+        //            resultBuilder.Append(item);
+        //            uniqueValues.Add(item);
+        //            itemCount++;
+        //        }
+        //    }
+
+        //    return resultBuilder.ToString();
+        //}
+
         public static string Prepend(this string input, string valueToPrepend, int maxItems = 6, char separator = ',')
         {
-            string val = valueToPrepend.Trim();
-            var inputValues = input.Split(separator).Select(s => s.Trim());
+            string val = valueToPrepend.Trim(separator, ' ');
+            var inputValues = input.Split(separator, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim());
 
             // Using StringBuilder for efficient string concatenation
             var resultBuilder = new StringBuilder(val);
@@ -121,7 +147,6 @@ namespace AITool
 
             return resultBuilder.ToString();
         }
-
         //[DebuggerStepThrough]
         public static string Append(this string value, string newvalue, string Separators, string ListSeparators = ",;")
         {
@@ -148,7 +173,7 @@ namespace AITool
 
         }
         [DebuggerStepThrough]
-        public static string Truncate(this string value, int maxLength = 256, bool ellipsis = true)
+        public static string Truncate(this string value, int maxLength = 512, bool ellipsis = true)
         {
             if (string.IsNullOrEmpty(value)) return value;
 

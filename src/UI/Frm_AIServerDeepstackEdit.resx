@@ -120,7 +120,14 @@
   <metadata name="toolTip1.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>17, 17</value>
   </metadata>
-  <metadata name="toolTip1.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-    <value>17, 17</value>
+  <data name="cb_AllowAIServerBasedQueue.ToolTip" xml:space="preserve">
+    <value>This will allow the queue functionality built into CodeProjectAI to work.  With this enabled, we will send as
+many image requests as it can handle.   We will ignore that the server is 'BUSY' unless the conditions below
+are met.    
+
+This will also allow CPAI 'Mesh' feature to work correctly.</value>
+  </data>
+  <metadata name="timer1.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <value>152, 17</value>
   </metadata>
 </root>

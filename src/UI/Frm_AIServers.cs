@@ -29,14 +29,14 @@ namespace AITool
 
             this.FOLV_AIServers.BooleanCheckStateGetter = delegate (Object rowObject)
             {
-                return !rowObject.IsNull() && ((ClsURLItem)rowObject).Enabled.ReadFullFence();
+                return !rowObject.IsNull() && ((ClsURLItem)rowObject).Enabled;
             };
 
             this.FOLV_AIServers.BooleanCheckStatePutter = delegate (Object rowObject, bool newValue)
             {
                 if (rowObject.IsNull())
                     return false;
-                ((ClsURLItem)rowObject).Enabled.WriteFullFence(newValue);
+                ((ClsURLItem)rowObject).Enabled = newValue;
                 return newValue;
             };
 
@@ -241,6 +241,92 @@ namespace AITool
             FormatURLRow(sender, e);
         }
 
+        private void FormatCell(object sender, BrightIdeasSoftware.FormatCellEventArgs e)
+        {
+            try
+            {
+                if (e.CellValue is DateTime)
+                {
+                    //26-Feb-2015 08:51:18.820
+                    DateTime dt = ((DateTime)e.CellValue);
+                    string NewText = "";
+                    if (dt > DateTime.MinValue)
+                    {
+                        NewText = dt.ToString(AppSettings.Settings.DateFormat);  //"yyyy-MM-dd hh:mm:ss tt"
+                    }
+                    else
+                    {
+                        NewText = "";
+                    }
+                    //"yyyy-MM-dd HH:mm:ss.fff"
+                    e.SubItem.Text = NewText;
+                }
+                else if (e.CellValue is ThreadSafe.DateTime)
+                {
+                    //26-Feb-2015 08:51:18.820
+                    DateTime dt = ((ThreadSafe.DateTime)e.CellValue);
+                    string NewText = "";
+                    if (dt > DateTime.MinValue)
+                    {
+                        NewText = dt.ToString(AppSettings.Settings.DateFormat);  //"yyyy-MM-dd hh:mm:ss tt"
+                    }
+                    else
+                    {
+                        NewText = "";
+                    }
+                    //"yyyy-MM-dd HH:mm:ss.fff"
+                    e.SubItem.Text = NewText;
+                }
+
+                //else if (e.CellValue is long)
+                //{
+                //    long cv = (long)e.CellValue;
+                //    if (cv == 0)
+                //    {
+                //        e.SubItem.Text = "";
+                //    }
+                //    else
+                //    {
+                //        if (e.Column.Name == "DwgSize" || e.Column.Name.StartsWith("Mem"))
+                //        {
+                //            e.SubItem.Text = Shared.ToPrettySize(cv);
+                //        }
+                //    }
+                //}
+                else if (e.CellValue is int)
+                {
+                    int cv = (int)e.CellValue;
+                    if (cv == 0)
+                    {
+                        e.SubItem.Text = "";
+                    }
+                }
+                else if (e.CellValue is ThreadSafe.Integer)
+                {
+                    int cv = (ThreadSafe.Integer)e.CellValue;
+                    if (cv == 0)
+                    {
+                        e.SubItem.Text = "";
+                    }
+                }
+                else if (e.CellValue is TimeSpan)
+                {
+                    TimeSpan ts = (TimeSpan)e.CellValue;
+                    if ((ts.TotalMilliseconds == 0) || (ts == TimeSpan.MinValue) || (ts == TimeSpan.MaxValue))
+                    {
+                        e.SubItem.Text = "";
+                    }
+                    else
+                    {
+                        e.SubItem.Text = string.Format("{0}d {1}h {2}m {3}s", ts.Duration().Days, ts.Duration().Hours, ts.Duration().Minutes, ts.Duration().Seconds);
+                    }
+                }
+            }
+            catch //(Exception ex)
+            {
+                //LogMsg("Error: " + ex.Message, , MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
         private void FormatURLRow(object Sender, BrightIdeasSoftware.FormatRowEventArgs e)
         {
             using Working w = new Working();
@@ -249,21 +335,21 @@ namespace AITool
                 ClsURLItem url = (ClsURLItem)e.Model;
 
                 // If SPI IsNot Nothing Then
-                if (url.Enabled.ReadFullFence() && url.CurErrCount.ReadFullFence() == 0 && !url.UseAsRefinementServer && !url.UseOnlyAsLinkedServer)
+                if (url.Enabled && url.CurErrCount == 0 && !url.UseAsRefinementServer && !url.UseOnlyAsLinkedServer)
                     e.Item.ForeColor = Color.Green;
 
-                else if (url.Enabled.ReadFullFence() && url.CurErrCount.ReadFullFence() == 0 && url.UseAsRefinementServer)
+                else if (url.Enabled && url.CurErrCount == 0 && url.UseAsRefinementServer)
                     e.Item.ForeColor = Color.DarkOrange;
 
-                else if (url.Enabled.ReadFullFence() && url.CurErrCount.ReadFullFence() == 0 && url.UseOnlyAsLinkedServer)
+                else if (url.Enabled && url.CurErrCount == 0 && url.UseOnlyAsLinkedServer)
                     e.Item.ForeColor = Color.DarkCyan;
 
-                else if (url.Enabled.ReadFullFence() && url.CurErrCount.ReadFullFence() > 0)
+                else if (url.Enabled && url.CurErrCount > 0)
                 {
                     e.Item.ForeColor = Color.Black;
                     e.Item.BackColor = Color.Red;
                 }
-                else if (!url.Enabled.ReadFullFence())
+                else if (!url.Enabled)
                     e.Item.ForeColor = Color.Gray;
                 else
                     e.Item.ForeColor = Color.Black;
@@ -500,6 +586,11 @@ namespace AITool
             {
                 _Working = false;
             }
+        }
+
+        private void FOLV_AIServers_FormatCell(object sender, BrightIdeasSoftware.FormatCellEventArgs e)
+        {
+            FormatCell(sender, e);
         }
     }
 }

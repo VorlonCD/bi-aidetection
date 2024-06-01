@@ -14,7 +14,7 @@ using System.Collections.Concurrent;
 
 namespace AITool
 {
-    public class ClsFace : IEquatable<ClsFace>
+    public class ClsFace:IEquatable<ClsFace>
     {
         public string Name { get; set; } = "";
         public long Hits { get; set; } = 0;
@@ -133,7 +133,7 @@ namespace AITool
         }
     }
 
-    public class ClsFaceFile : IEquatable<ClsFaceFile>
+    public class ClsFaceFile:IEquatable<ClsFaceFile>
     {
         [JsonConstructor]
         public ClsFaceFile()
@@ -222,7 +222,7 @@ namespace AITool
             if (this.Faces.Count > 0)
             {
                 this.Faces.Clear();
-                NeedsSaving.WriteFullFence(true);
+                NeedsSaving = true;
             }
 
             this.FaceFile = Path.Combine(AppSettings.Settings.FacesPath, "Faces.JSON");
@@ -235,13 +235,13 @@ namespace AITool
 
 
 
-            if (NeedsSaving.ReadFullFence()) // && this.FacesDic.IsNotEmpty())
+            if (NeedsSaving) // && this.FacesDic.IsNotEmpty())
             {
                 //lock (FaceLock)
                 this.Faces.Clear();  //not used any longer
                 Global.WriteToJsonFile<ClsFaceManager>(this.FaceFile, this);
 
-                NeedsSaving.WriteFullFence(false);
+                NeedsSaving = false;
             }
         }
         public void UpdateFaces()
@@ -364,7 +364,7 @@ namespace AITool
 
             int tot = missingfaces + oldfiles + addedfiles + missingfiles;
 
-            NeedsSaving.WriteFullFence(tot > 0);
+            NeedsSaving = tot > 0;
 
             Log($"Updated {this.FacesDic.Count} faces in {sw.ElapsedMilliseconds}ms. {errors} errors. {missingfaces} faces removed. {totalfiles} files. Added {addedfiles} new files, Removed {missingfiles} missing files and {oldfiles} files that were too old.");
 
@@ -400,7 +400,7 @@ namespace AITool
             //delete from unknown folder if it was originally from there and it moved
             if (added)
             {
-                this.NeedsSaving.WriteFullFence(true);
+                this.NeedsSaving = true;
 
                 if (CurImg.image_path.Has("\\unknown\\") && !Outfilename.Has("\\unknown\\") &&
                     CurImg.image_path.Has("\\face\\") && !Outfilename.Has("\\face\\"))
@@ -422,7 +422,7 @@ namespace AITool
             bool added = this.FacesDic.TryAdd(face.ToLower(), FoundFace);
 
             if (added)
-                this.NeedsSaving.WriteFullFence(true);
+                this.NeedsSaving = true;
 
             return FoundFace;
         }

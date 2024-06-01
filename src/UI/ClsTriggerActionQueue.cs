@@ -8,14 +8,11 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Media;
-using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Reflection;
 using System.Speech.Synthesis;
-using System.Threading;
 using System.Threading.Tasks;
-using System.Windows.Forms.DataVisualization.Charting;
 
 using MQTTnet.Client;
 
@@ -24,10 +21,7 @@ using NPushover.ResponseObjects;
 
 using SixLabors.ImageSharp;
 
-using Telegram.Bot;
 using Telegram.Bot.Exceptions;
-using Telegram.Bot.Types.Enums;
-using Telegram.Bot.Types;
 //using Telegram.Bot.Types.InputFiles;
 
 using static AITool.AITOOL;
@@ -81,11 +75,11 @@ namespace AITool
     {
         BlockingCollection<ClsTriggerActionQueueItem> TriggerActionQueue = new BlockingCollection<ClsTriggerActionQueueItem>();
         ConcurrentDictionary<string, ClsTriggerActionQueueItem> CancelActionDict = new ConcurrentDictionary<string, ClsTriggerActionQueueItem>();
-        ConcurrentDictionary<string, ThreadSafe.Datetime> GroupsLastTriggerDict = new ConcurrentDictionary<string, ThreadSafe.Datetime>();
-        public ThreadSafe.Datetime last_telegram_trigger_time { get; set; } = new ThreadSafe.Datetime(DateTime.MinValue);
-        public ThreadSafe.Datetime last_Pushover_trigger_time { get; set; } = new ThreadSafe.Datetime(DateTime.MinValue);
-        public ThreadSafe.Datetime TelegramRetryTime { get; set; } = new ThreadSafe.Datetime(DateTime.MinValue);
-        public ThreadSafe.Datetime PushoverRetryTime { get; set; } = new ThreadSafe.Datetime(DateTime.MinValue);
+        ConcurrentDictionary<string, ThreadSafe.DateTime> GroupsLastTriggerDict = new ConcurrentDictionary<string, ThreadSafe.DateTime>();
+        public ThreadSafe.DateTime last_telegram_trigger_time { get; set; } = new ThreadSafe.DateTime(DateTime.MinValue, AppSettings.Settings.DateFormat);
+        public ThreadSafe.DateTime last_Pushover_trigger_time { get; set; } = new ThreadSafe.DateTime(DateTime.MinValue, AppSettings.Settings.DateFormat);
+        public ThreadSafe.DateTime TelegramRetryTime { get; set; } = new ThreadSafe.DateTime(DateTime.MinValue, AppSettings.Settings.DateFormat);
+        public ThreadSafe.DateTime PushoverRetryTime { get; set; } = new ThreadSafe.DateTime(DateTime.MinValue, AppSettings.Settings.DateFormat);
         //public ClsURLItem _url { get; set; } = null;
         private String CurSrv = "";
         string ImgPath = "NoImage";
@@ -141,8 +135,8 @@ namespace AITool
                         }
                         else
                         {
-                            this.Count.WriteFullFence(this.TriggerActionQueue.Count);
-                            AQI.QueueCount = this.Count.ReadFullFence();
+                            this.Count = this.TriggerActionQueue.Count;
+                            AQI.QueueCount = this.Count;
 
                             ret = true;
                             Log($"Debug: Action '{AQI.TType}' ADDED to queue. Trigger={AQI.Trigger}, Queued={AQI.IsQueued}, Queue Count={AQI.QueueCount}, Image={this.ImgPath}", this.CurSrv, AQI.cam, AQI.CurImg);
@@ -214,19 +208,19 @@ namespace AITool
 
                         try
                         {
-                            if (AQI.cam.Action_Cancel_Timer_Enabled.ReadFullFence())
+                            if (AQI.cam.Action_Cancel_Timer_Enabled)
                             {
-                                if ((DateTime.Now - AQI.cam.Action_Cancel_Start_Time.Read()).TotalSeconds >= AppSettings.Settings.ActionCancelSeconds)
+                                if ((DateTime.Now - AQI.cam.Action_Cancel_Start_Time).TotalSeconds >= AppSettings.Settings.ActionCancelSeconds)
                                 {
-                                    Log($"Debug: Running cancel Action '{AQI.TType}' in queue for event '{AQI.Hist.Detections}' for camera '{AQI.camname}', after {(DateTime.Now - AQI.cam.Action_Cancel_Start_Time.Read()).TotalSeconds.Round()} seconds...", this.CurSrv, AQI.cam, AQI.CurImg);
+                                    Log($"Debug: Running cancel Action '{AQI.TType}' in queue for event '{AQI.Hist.Detections}' for camera '{AQI.camname}', after {(DateTime.Now - AQI.cam.Action_Cancel_Start_Time).TotalSeconds.Round()} seconds...", this.CurSrv, AQI.cam, AQI.CurImg);
                                     await this.RunTriggers(AQI);
-                                    AQI.cam.Action_Cancel_Timer_Enabled.WriteFullFence(false);  // will be deleted next time the loop goes through
+                                    AQI.cam.Action_Cancel_Timer_Enabled = false;  // will be deleted next time the loop goes through
                                 }
                             }
                             else
                             {
                                 CancelActionDict.TryRemove(AQI.camname.ToLower(), out ClsTriggerActionQueueItem removedItem);
-                                Log($"Debug: Removed cancel Action '{AQI.TType}' in queue for event '{AQI.Hist.Detections}' for camera '{AQI.camname}', after {(DateTime.Now - AQI.cam.Action_Cancel_Start_Time.Read()).TotalSeconds.Round()} seconds", this.CurSrv, AQI.cam, AQI.CurImg);
+                                Log($"Debug: Removed cancel Action '{AQI.TType}' in queue for event '{AQI.Hist.Detections}' for camera '{AQI.camname}', after {(DateTime.Now - AQI.cam.Action_Cancel_Start_Time).TotalSeconds.Round()} seconds", this.CurSrv, AQI.cam, AQI.CurImg);
 
                             }
 
@@ -259,7 +253,7 @@ namespace AITool
 
                 Stopwatch sw = Stopwatch.StartNew();
 
-                this.Count.WriteFullFence(this.TriggerActionQueue.Count);
+                this.Count = this.TriggerActionQueue.Count;
 
                 this.QCountCalc.AddToCalc(AQI.QueueCount);
 
@@ -300,9 +294,9 @@ namespace AITool
                     if (AQI.TType == TriggerType.Cancel || AQI.Trigger == false)  //If this is a CANCEL anyway...
                     {
                         //if we already did a cancel, set flag to delete the queued cancel item if exists and log that we are removing from queue
-                        if (AQI.cam.Action_Cancel_Timer_Enabled.ReadFullFence() || this.CancelActionDict.ContainsKey(AQI.camname.ToLower()))
+                        if (AQI.cam.Action_Cancel_Timer_Enabled || this.CancelActionDict.ContainsKey(AQI.camname.ToLower()))
                         {
-                            AQI.cam.Action_Cancel_Timer_Enabled.WriteFullFence(false);
+                            AQI.cam.Action_Cancel_Timer_Enabled = false;
                             if (this.CancelActionDict.ContainsKey(AQI.camname.ToLower()))
                                 this.CancelActionDict.TryRemove(AQI.camname.ToLower(), out ClsTriggerActionQueueItem ignoreme);
 
@@ -316,13 +310,13 @@ namespace AITool
                         {
                             //if already in queue, update date
                             Log($"Debug: EXTENDING cancel action '{AQI.TType}' time due to event '{AQI.Hist.Detections}' for camera '{AQI.camname}', waiting {AppSettings.Settings.ActionCancelSeconds} seconds...", this.CurSrv, AQI.cam, AQI.CurImg);
-                            AQI.cam.Action_Cancel_Start_Time.Write(DateTime.Now);
+                            AQI.cam.Action_Cancel_Start_Time = DateTime.Now;
                         }
                         else  //add it to the queue
                         {
                             Log($"Debug: Cancel action '{AQI.TType}' queued due to event '{AQI.Hist.Detections}' for camera '{AQI.camname}', waiting {AppSettings.Settings.ActionCancelSeconds} seconds...", this.CurSrv, AQI.cam, AQI.CurImg);
-                            AQI.cam.Action_Cancel_Start_Time.Write(DateTime.Now);
-                            AQI.cam.Action_Cancel_Timer_Enabled.WriteFullFence(true);
+                            AQI.cam.Action_Cancel_Start_Time = DateTime.Now;
+                            AQI.cam.Action_Cancel_Timer_Enabled = true;
                             AQI.Trigger = false;  //set to be a cancel
                             AQI.TType = TriggerType.Cancel;
                             this.CancelActionDict.TryAdd(AQI.camname.ToLower(), AQI);
@@ -334,7 +328,7 @@ namespace AITool
                     Log($"Debug: Cancel action '{AQI.TType}' could not be queued because there are no CANCEL actions configured.   Event='{AQI.Hist.Detections}' for camera '{AQI.camname}'", this.CurSrv, AQI.cam, AQI.CurImg);
                 }
 
-                this.Count.WriteFullFence(this.TriggerActionQueue.Count);
+                this.Count = this.TriggerActionQueue.Count;
 
                 AQI.ActionTimeMS = sw.ElapsedMilliseconds;
                 AQI.TotalTimeMS = Convert.ToInt64((DateTime.Now - AQI.AddedTime).TotalMilliseconds);
@@ -362,7 +356,7 @@ namespace AITool
         //{
         //    if (cam.CameraGroup.IsEmpty())
         //    {
-        //        cooltime = (DateTime.Now - cam.last_trigger_time.Read()).TotalSeconds;
+        //        cooltime = (DateTime.Now - cam.last_trigger_time).TotalSeconds;
         //        return cooltime >= cam.cooldown_time_seconds;
         //    }
         //    else
@@ -400,7 +394,7 @@ namespace AITool
 
             try
             {
-                double cooltime = (DateTime.Now - AQI.cam.last_trigger_time.Read()).TotalSeconds;
+                double cooltime = (DateTime.Now - AQI.cam.last_trigger_time).TotalSeconds;
                 string tmpfile = "";
 
                 //only trigger if cameras cooldown time since last detection has passed
@@ -448,7 +442,7 @@ namespace AITool
                     //Play sounds
                     if (AQI.cam.Action_PlaySounds && AQI.Trigger)
                     {
-                        double soundcooltime = (DateTime.Now - AQI.cam.last_sound_time.Read()).TotalSeconds;
+                        double soundcooltime = (DateTime.Now - AQI.cam.last_sound_time).TotalSeconds;
 
                         if (soundcooltime >= AQI.cam.sound_cooldown_time_seconds)
                         {
@@ -565,7 +559,7 @@ namespace AITool
                                 if (wasplayed)
                                 {
 
-                                    AQI.cam.last_sound_time.Write(DateTime.Now);
+                                    AQI.cam.last_sound_time = DateTime.Now;
 
                                     if (AppSettings.Settings.ActionDelayMS >= 100)  //dont show for tiny delays
                                         Log($"Debug:  ...Applying 'ActionDelayMS' delay of {AppSettings.Settings.ActionDelayMS}ms.");
@@ -762,9 +756,9 @@ namespace AITool
 
                     if (AQI.Trigger)
                     {
-                        AQI.cam.last_trigger_time.Write(DateTime.Now); //reset cooldown time every time an image contains something, even if no trigger was called (still in cooldown time)
-                        Log($"Debug: {AQI.camname} last triggered at {AQI.cam.last_trigger_time.Read()}.", this.CurSrv, AQI.cam, AQI.CurImg);
-                        Global.UpdateLabel($"{AQI.camname} last triggered at {AQI.cam.last_trigger_time.Read()}.", "lbl_info");
+                        AQI.cam.last_trigger_time = DateTime.Now; //reset cooldown time every time an image contains something, even if no trigger was called (still in cooldown time)
+                        Log($"Debug: {AQI.camname} last triggered at {AQI.cam.last_trigger_time}.", this.CurSrv, AQI.cam, AQI.CurImg);
+                        Global.UpdateLabel($"{AQI.camname} last triggered at {AQI.cam.last_trigger_time}.", "lbl_info");
                     }
 
                 }
@@ -1270,9 +1264,9 @@ namespace AITool
 
                     DateTime now = DateTime.Now;
 
-                    if (this.PushoverRetryTime.Read() == DateTime.MinValue || now >= this.PushoverRetryTime.Read())
+                    if (this.PushoverRetryTime == DateTime.MinValue || now >= this.PushoverRetryTime)
                     {
-                        double cooltime = Math.Round((now - this.last_Pushover_trigger_time.Read()).TotalSeconds, 4);
+                        double cooltime = Math.Round((now - this.last_Pushover_trigger_time).TotalSeconds, 4);
                         if (cooltime >= AppSettings.Settings.pushover_cooldown_seconds)
                         {
                             string title = "";
@@ -1377,7 +1371,7 @@ namespace AITool
                                             response = await AITOOL.pushoverClient.SendPushoverMessageAsync(msg, userkey, pushdevice, AQI.CurImg);
                                             await Task.Delay(AppSettings.Settings.loop_delay_ms);
                                         }
-                                        this.last_Pushover_trigger_time.Write(now);
+                                        this.last_Pushover_trigger_time = now;
                                         sw.Stop();
                                     }
                                     catch (Exception ex)
@@ -1417,9 +1411,9 @@ namespace AITool
                                     }
 
                                     if (!ret)
-                                        this.PushoverRetryTime.Write(DateTime.Now.AddSeconds(AppSettings.Settings.Pushover_RetryAfterFailSeconds));
+                                        this.PushoverRetryTime = DateTime.Now.AddSeconds(AppSettings.Settings.Pushover_RetryAfterFailSeconds);
                                     else
-                                        this.PushoverRetryTime.Write(DateTime.MinValue);
+                                        this.PushoverRetryTime = DateTime.MinValue;
 
 
 
@@ -1442,7 +1436,7 @@ namespace AITool
                     }
                     else
                     {
-                        Log($"Debug:   Waiting {Math.Round((this.PushoverRetryTime.Read() - DateTime.Now).TotalSeconds, 1)} seconds ({this.PushoverRetryTime.Read()}) to retry PUSHOVER connection.  This is due to a previous pushover send error.", this.CurSrv, AQI.cam, AQI.CurImg);
+                        Log($"Debug:   Waiting {Math.Round((this.PushoverRetryTime - DateTime.Now).TotalSeconds, 1)} seconds ({this.PushoverRetryTime}) to retry PUSHOVER connection.  This is due to a previous pushover send error.", this.CurSrv, AQI.cam, AQI.CurImg);
                     }
 
 
@@ -1506,9 +1500,9 @@ namespace AITool
 
                     DateTime now = DateTime.Now;
 
-                    if (this.TelegramRetryTime.Read() == DateTime.MinValue || now >= this.TelegramRetryTime.Read())
+                    if (this.TelegramRetryTime == DateTime.MinValue || now >= this.TelegramRetryTime)
                     {
-                        double cooltime = Math.Round((now - this.last_telegram_trigger_time.Read()).TotalSeconds, 4);
+                        double cooltime = Math.Round((now - this.last_telegram_trigger_time).TotalSeconds, 4);
                         if (cooltime >= AppSettings.Settings.telegram_cooldown_seconds)
                         {
                             //in order to avoid hitting our limits when sending out mass notifications, consider spreading them over longer intervals, e.g. 8-12 hours. The API will not allow bulk notifications to more than ~30 users per second, if you go over that, you'll start getting 429 errors.
@@ -1542,8 +1536,8 @@ namespace AITool
                                 }
                                 ret = message != null;
 
-                                this.last_telegram_trigger_time.Write(DateTime.Now);
-                                this.TelegramRetryTime.Write(DateTime.MinValue);
+                                this.last_telegram_trigger_time = DateTime.Now;
+                                this.TelegramRetryTime = DateTime.MinValue;
 
                                 if (AQI.IsQueued)
                                 {
@@ -1568,7 +1562,7 @@ namespace AITool
                     }
                     else
                     {
-                        Log($"Debug:   Waiting {Math.Round((this.TelegramRetryTime.Read() - DateTime.Now).TotalSeconds, 1)} seconds ({this.TelegramRetryTime}) to retry TELEGRAM connection.  This is due to a previous telegram send error.", this.CurSrv, AQI.cam, AQI.CurImg);
+                        Log($"Debug:   Waiting {Math.Round((this.TelegramRetryTime - DateTime.Now).TotalSeconds, 1)} seconds ({this.TelegramRetryTime}) to retry TELEGRAM connection.  This is due to a previous telegram send error.", this.CurSrv, AQI.cam, AQI.CurImg);
                     }
 
 
@@ -1581,8 +1575,8 @@ namespace AITool
 
                     if (!ex.Parameters.IsNull() && !ex.Parameters.RetryAfter.IsNull())
                     {
-                        this.TelegramRetryTime.Write(DateTime.Now.AddSeconds(Convert.ToDouble(ex.Parameters.RetryAfter)));
-                        Log($"...BOT API returned 'RetryAfter' value '{ex.Parameters.RetryAfter} seconds', so not retrying until {this.TelegramRetryTime.Read()}", this.CurSrv, AQI.cam, AQI.CurImg);
+                        this.TelegramRetryTime = DateTime.Now.AddSeconds(Convert.ToDouble(ex.Parameters.RetryAfter));
+                        Log($"...BOT API returned 'RetryAfter' value '{ex.Parameters.RetryAfter} seconds', so not retrying until {this.TelegramRetryTime}", this.CurSrv, AQI.cam, AQI.CurImg);
                     }
 
                     AppSettings.Settings.send_telegram_errors = se;
@@ -1607,7 +1601,7 @@ namespace AITool
                     bool se = AppSettings.Settings.send_telegram_errors;
                     AppSettings.Settings.send_telegram_errors = false;
                     Log($"ERROR: Could not upload image {AQI.CurImg.image_path} to Telegram with chatid '{lastchatid.ReplaceChars('*')}': {ex.Msg()}", this.CurSrv, AQI.cam, AQI.CurImg);
-                    this.TelegramRetryTime.Write(DateTime.Now.AddSeconds(AppSettings.Settings.Telegram_RetryAfterFailSeconds));
+                    this.TelegramRetryTime = DateTime.Now.AddSeconds(AppSettings.Settings.Telegram_RetryAfterFailSeconds);
                     Log($"Debug: ...'Default' 'Telegram_RetryAfterFailSeconds' value was set to '{AppSettings.Settings.Telegram_RetryAfterFailSeconds}' seconds, so not retrying until {this.TelegramRetryTime}", this.CurSrv, AQI.cam, AQI.CurImg);
                     AppSettings.Settings.send_telegram_errors = se;
                     //store image that caused an error in ./errors/
@@ -1660,9 +1654,9 @@ namespace AITool
 
                     DateTime now = DateTime.Now;
 
-                    if (this.TelegramRetryTime.Read() == DateTime.MinValue || now >= this.TelegramRetryTime.Read())
+                    if (this.TelegramRetryTime == DateTime.MinValue || now >= this.TelegramRetryTime)
                     {
-                        double cooltime = Math.Round((now - this.last_telegram_trigger_time.Read()).TotalSeconds, 4);
+                        double cooltime = Math.Round((now - this.last_telegram_trigger_time).TotalSeconds, 4);
                         if (cooltime >= AppSettings.Settings.telegram_cooldown_seconds)
                         {
                             if (Global.IsTimeBetween(now, AQI.cam.telegram_active_time_range))
@@ -1691,8 +1685,8 @@ namespace AITool
                                     }
 
                                 }
-                                this.last_telegram_trigger_time.Write(DateTime.Now);
-                                this.TelegramRetryTime.Write(DateTime.MinValue);
+                                this.last_telegram_trigger_time = DateTime.Now;
+                                this.TelegramRetryTime = DateTime.MinValue;
 
                                 if (AQI.IsQueued)
                                 {
@@ -1718,7 +1712,7 @@ namespace AITool
                     }
                     else
                     {
-                        Log($"   Waiting {Math.Round((this.TelegramRetryTime.Read() - DateTime.Now).TotalSeconds, 1)} seconds ({this.TelegramRetryTime}) to retry TELEGRAM connection.  This is due to a previous telegram send error.", this.CurSrv, AQI.cam, AQI.CurImg);
+                        Log($"   Waiting {Math.Round((this.TelegramRetryTime - DateTime.Now).TotalSeconds, 1)} seconds ({this.TelegramRetryTime}) to retry TELEGRAM connection.  This is due to a previous telegram send error.", this.CurSrv, AQI.cam, AQI.CurImg);
                     }
 
 
@@ -1729,7 +1723,7 @@ namespace AITool
                     bool se = AppSettings.Settings.send_telegram_errors;
                     AppSettings.Settings.send_telegram_errors = false;
                     Log($"ERROR: Could not upload text '{AQI.Text}' with chatid '{lastchatid}' to Telegram: {ex.Msg()}", this.CurSrv, AQI.cam, AQI.CurImg);
-                    this.TelegramRetryTime.Write(DateTime.Now.AddSeconds(Convert.ToDouble(ex.Parameters.RetryAfter)));
+                    this.TelegramRetryTime = DateTime.Now.AddSeconds(Convert.ToDouble(ex.Parameters.RetryAfter));
                     Log($"...BOT API returned 'RetryAfter' value '{ex.Parameters.RetryAfter} seconds', so not retrying until {this.TelegramRetryTime}", this.CurSrv, AQI.cam, AQI.CurImg);
                     AppSettings.Settings.send_telegram_errors = se;
                     Global.UpdateLabel($"Can't upload error message to Telegram!", "lbl_errors");
@@ -1740,7 +1734,7 @@ namespace AITool
                     bool se = AppSettings.Settings.send_telegram_errors;
                     AppSettings.Settings.send_telegram_errors = false;
                     Log($"ERROR: Could not upload image '{AQI.Text}' with chatid '{lastchatid}' to Telegram: {ex.Msg()}", this.CurSrv, AQI.cam, AQI.CurImg);
-                    this.TelegramRetryTime.Write(DateTime.Now.AddSeconds(AppSettings.Settings.Telegram_RetryAfterFailSeconds));
+                    this.TelegramRetryTime = DateTime.Now.AddSeconds(AppSettings.Settings.Telegram_RetryAfterFailSeconds);
                     Log($"...'Default' 'Telegram_RetryAfterFailSeconds' value was set to '{AppSettings.Settings.Telegram_RetryAfterFailSeconds}' seconds, so not retrying until {this.TelegramRetryTime}", this.CurSrv, AQI.cam, AQI.CurImg);
                     AppSettings.Settings.send_telegram_errors = se;
                     Global.UpdateLabel($"Can't upload error message to Telegram!", "lbl_errors");

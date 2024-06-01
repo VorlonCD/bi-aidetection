@@ -30,6 +30,7 @@ namespace AITool
         private void InitializeComponent()
         {
             components = new System.ComponentModel.Container();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Frm_AIServerDeepstackEdit));
             label1 = new System.Windows.Forms.Label();
             label2 = new System.Windows.Forms.Label();
             lbl_type = new System.Windows.Forms.Label();
@@ -41,6 +42,19 @@ namespace AITool
             tb_ApplyToCams = new System.Windows.Forms.TextBox();
             chk_Enabled = new System.Windows.Forms.CheckBox();
             groupBox1 = new System.Windows.Forms.GroupBox();
+            gb_AIServerQueue = new System.Windows.Forms.GroupBox();
+            lbl_ImgQueueStats = new System.Windows.Forms.Label();
+            lbl_QueueTimeStats = new System.Windows.Forms.Label();
+            lbl_QueueLengthStats = new System.Windows.Forms.Label();
+            label19 = new System.Windows.Forms.Label();
+            label18 = new System.Windows.Forms.Label();
+            cb_AllowAIServerBasedQueue = new System.Windows.Forms.CheckBox();
+            tb_SkipIfImgQueueLengthLarger = new System.Windows.Forms.TextBox();
+            tb_SkipIfAIQueueTimeOverSecs = new System.Windows.Forms.TextBox();
+            tb_MaxQueueLength = new System.Windows.Forms.TextBox();
+            label17 = new System.Windows.Forms.Label();
+            label16 = new System.Windows.Forms.Label();
+            cb_IgnoreOffline = new System.Windows.Forms.CheckBox();
             tb_Name = new System.Windows.Forms.TextBox();
             label14 = new System.Windows.Forms.Label();
             cb_OnlyLinked = new System.Windows.Forms.CheckBox();
@@ -61,20 +75,18 @@ namespace AITool
             label3 = new System.Windows.Forms.Label();
             tb_timeout = new System.Windows.Forms.TextBox();
             tb_ImagesPerMonth = new System.Windows.Forms.TextBox();
-            btn_ImageAdjustEdit = new System.Windows.Forms.Button();
-            cb_ImageAdjustProfile = new System.Windows.Forms.ComboBox();
             label15 = new System.Windows.Forms.Label();
             label9 = new System.Windows.Forms.Label();
             label8 = new System.Windows.Forms.Label();
             labelTimeout = new System.Windows.Forms.Label();
             label7 = new System.Windows.Forms.Label();
-            label6 = new System.Windows.Forms.Label();
             toolTip1 = new System.Windows.Forms.ToolTip(components);
             linkHelpURL = new System.Windows.Forms.LinkLabel();
             btTest = new System.Windows.Forms.Button();
             bt_clear = new System.Windows.Forms.Button();
-            cb_IgnoreOffline = new System.Windows.Forms.CheckBox();
+            timer1 = new System.Windows.Forms.Timer(components);
             groupBox1.SuspendLayout();
+            gb_AIServerQueue.SuspendLayout();
             groupBoxLinked.SuspendLayout();
             groupBoxRefine.SuspendLayout();
             SuspendLayout();
@@ -100,10 +112,11 @@ namespace AITool
             // lbl_type
             // 
             lbl_type.AutoSize = true;
+            lbl_type.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0);
             lbl_type.ForeColor = System.Drawing.Color.DodgerBlue;
             lbl_type.Location = new System.Drawing.Point(121, 16);
             lbl_type.Name = "lbl_type";
-            lbl_type.Size = new System.Drawing.Size(10, 13);
+            lbl_type.Size = new System.Drawing.Size(10, 15);
             lbl_type.TabIndex = 0;
             lbl_type.Text = ".";
             // 
@@ -113,7 +126,7 @@ namespace AITool
             tb_URL.Font = new System.Drawing.Font("Consolas", 8.25F);
             tb_URL.Location = new System.Drawing.Point(121, 60);
             tb_URL.Name = "tb_URL";
-            tb_URL.Size = new System.Drawing.Size(512, 20);
+            tb_URL.Size = new System.Drawing.Size(508, 20);
             tb_URL.TabIndex = 1;
             tb_URL.TextChanged += tb_URL_TextChanged;
             // 
@@ -121,7 +134,7 @@ namespace AITool
             // 
             bt_Save.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
             bt_Save.DialogResult = System.Windows.Forms.DialogResult.OK;
-            bt_Save.Location = new System.Drawing.Point(575, 405);
+            bt_Save.Location = new System.Drawing.Point(576, 533);
             bt_Save.Name = "bt_Save";
             bt_Save.Size = new System.Drawing.Size(70, 30);
             bt_Save.TabIndex = 17;
@@ -162,7 +175,7 @@ namespace AITool
             tb_ApplyToCams.Font = new System.Drawing.Font("Consolas", 8.25F);
             tb_ApplyToCams.Location = new System.Drawing.Point(121, 86);
             tb_ApplyToCams.Name = "tb_ApplyToCams";
-            tb_ApplyToCams.Size = new System.Drawing.Size(512, 20);
+            tb_ApplyToCams.Size = new System.Drawing.Size(508, 20);
             tb_ApplyToCams.TabIndex = 2;
             toolTip1.SetToolTip(tb_ApplyToCams, "A comma separated list of cameras that this AI server will work with.\r\n\r\nLeave empty for ALL.");
             // 
@@ -180,6 +193,8 @@ namespace AITool
             // 
             // groupBox1
             // 
+            groupBox1.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
+            groupBox1.Controls.Add(gb_AIServerQueue);
             groupBox1.Controls.Add(cb_IgnoreOffline);
             groupBox1.Controls.Add(tb_Name);
             groupBox1.Controls.Add(label14);
@@ -195,8 +210,6 @@ namespace AITool
             groupBox1.Controls.Add(label3);
             groupBox1.Controls.Add(tb_timeout);
             groupBox1.Controls.Add(tb_ImagesPerMonth);
-            groupBox1.Controls.Add(btn_ImageAdjustEdit);
-            groupBox1.Controls.Add(cb_ImageAdjustProfile);
             groupBox1.Controls.Add(chk_Enabled);
             groupBox1.Controls.Add(tb_ApplyToCams);
             groupBox1.Controls.Add(label15);
@@ -210,20 +223,159 @@ namespace AITool
             groupBox1.Controls.Add(labelTimeout);
             groupBox1.Controls.Add(label7);
             groupBox1.Controls.Add(label4);
-            groupBox1.Controls.Add(label6);
             groupBox1.Controls.Add(label5);
             groupBox1.Location = new System.Drawing.Point(5, 6);
             groupBox1.Name = "groupBox1";
-            groupBox1.Size = new System.Drawing.Size(640, 393);
+            groupBox1.Size = new System.Drawing.Size(636, 522);
             groupBox1.TabIndex = 7;
             groupBox1.TabStop = false;
+            // 
+            // gb_AIServerQueue
+            // 
+            gb_AIServerQueue.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
+            gb_AIServerQueue.Controls.Add(lbl_ImgQueueStats);
+            gb_AIServerQueue.Controls.Add(lbl_QueueTimeStats);
+            gb_AIServerQueue.Controls.Add(lbl_QueueLengthStats);
+            gb_AIServerQueue.Controls.Add(label19);
+            gb_AIServerQueue.Controls.Add(label18);
+            gb_AIServerQueue.Controls.Add(cb_AllowAIServerBasedQueue);
+            gb_AIServerQueue.Controls.Add(tb_SkipIfImgQueueLengthLarger);
+            gb_AIServerQueue.Controls.Add(tb_SkipIfAIQueueTimeOverSecs);
+            gb_AIServerQueue.Controls.Add(tb_MaxQueueLength);
+            gb_AIServerQueue.Controls.Add(label17);
+            gb_AIServerQueue.Controls.Add(label16);
+            gb_AIServerQueue.Location = new System.Drawing.Point(7, 389);
+            gb_AIServerQueue.Name = "gb_AIServerQueue";
+            gb_AIServerQueue.Size = new System.Drawing.Size(619, 127);
+            gb_AIServerQueue.TabIndex = 26;
+            gb_AIServerQueue.TabStop = false;
+            // 
+            // lbl_ImgQueueStats
+            // 
+            lbl_ImgQueueStats.AutoSize = true;
+            lbl_ImgQueueStats.Font = new System.Drawing.Font("Segoe UI", 8.142858F);
+            lbl_ImgQueueStats.Location = new System.Drawing.Point(280, 102);
+            lbl_ImgQueueStats.Name = "lbl_ImgQueueStats";
+            lbl_ImgQueueStats.Size = new System.Drawing.Size(10, 13);
+            lbl_ImgQueueStats.TabIndex = 28;
+            lbl_ImgQueueStats.Text = ".";
+            // 
+            // lbl_QueueTimeStats
+            // 
+            lbl_QueueTimeStats.AutoSize = true;
+            lbl_QueueTimeStats.Font = new System.Drawing.Font("Segoe UI", 8.142858F);
+            lbl_QueueTimeStats.Location = new System.Drawing.Point(281, 74);
+            lbl_QueueTimeStats.Name = "lbl_QueueTimeStats";
+            lbl_QueueTimeStats.Size = new System.Drawing.Size(10, 13);
+            lbl_QueueTimeStats.TabIndex = 28;
+            lbl_QueueTimeStats.Text = ".";
+            // 
+            // lbl_QueueLengthStats
+            // 
+            lbl_QueueLengthStats.AutoSize = true;
+            lbl_QueueLengthStats.Font = new System.Drawing.Font("Segoe UI", 8.142858F);
+            lbl_QueueLengthStats.Location = new System.Drawing.Point(281, 47);
+            lbl_QueueLengthStats.Name = "lbl_QueueLengthStats";
+            lbl_QueueLengthStats.Size = new System.Drawing.Size(10, 13);
+            lbl_QueueLengthStats.TabIndex = 28;
+            lbl_QueueLengthStats.Text = ".";
+            // 
+            // label19
+            // 
+            label19.AutoSize = true;
+            label19.Location = new System.Drawing.Point(11, 74);
+            label19.Name = "label19";
+            label19.Size = new System.Drawing.Size(201, 13);
+            label19.TabIndex = 27;
+            label19.Text = "AI Server Queue Seconds Larger Than:";
+            // 
+            // label18
+            // 
+            label18.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
+            label18.AutoSize = true;
+            label18.ForeColor = System.Drawing.Color.Gray;
+            label18.Location = new System.Drawing.Point(11, 23);
+            label18.Name = "label18";
+            label18.Size = new System.Drawing.Size(531, 13);
+            label18.TabIndex = 26;
+            label18.Text = "Skip to the next AITOOL url (if more than one available) when any of the following conditions are met:";
+            // 
+            // cb_AllowAIServerBasedQueue
+            // 
+            cb_AllowAIServerBasedQueue.AutoSize = true;
+            cb_AllowAIServerBasedQueue.ForeColor = System.Drawing.Color.DodgerBlue;
+            cb_AllowAIServerBasedQueue.Location = new System.Drawing.Point(7, 0);
+            cb_AllowAIServerBasedQueue.Name = "cb_AllowAIServerBasedQueue";
+            cb_AllowAIServerBasedQueue.Size = new System.Drawing.Size(212, 17);
+            cb_AllowAIServerBasedQueue.TabIndex = 23;
+            cb_AllowAIServerBasedQueue.Text = "Allow AI Server Based Queue / MESH";
+            toolTip1.SetToolTip(cb_AllowAIServerBasedQueue, resources.GetString("cb_AllowAIServerBasedQueue.ToolTip"));
+            cb_AllowAIServerBasedQueue.UseVisualStyleBackColor = true;
+            cb_AllowAIServerBasedQueue.CheckedChanged += cb_AllowAIServerBasedQueue_CheckedChanged;
+            // 
+            // tb_SkipIfImgQueueLengthLarger
+            // 
+            tb_SkipIfImgQueueLengthLarger.Location = new System.Drawing.Point(219, 97);
+            tb_SkipIfImgQueueLengthLarger.Name = "tb_SkipIfImgQueueLengthLarger";
+            tb_SkipIfImgQueueLengthLarger.Size = new System.Drawing.Size(56, 22);
+            tb_SkipIfImgQueueLengthLarger.TabIndex = 25;
+            toolTip1.SetToolTip(tb_SkipIfImgQueueLengthLarger, "If the AITOOL image queue is larger than this value, and the server\r\nhas at least 1 item in its queue, skip to the next server URL to give it a\r\nchance to help lower the queue.");
+            // 
+            // tb_SkipIfAIQueueTimeOverSecs
+            // 
+            tb_SkipIfAIQueueTimeOverSecs.Location = new System.Drawing.Point(219, 69);
+            tb_SkipIfAIQueueTimeOverSecs.Name = "tb_SkipIfAIQueueTimeOverSecs";
+            tb_SkipIfAIQueueTimeOverSecs.Size = new System.Drawing.Size(56, 22);
+            tb_SkipIfAIQueueTimeOverSecs.TabIndex = 25;
+            toolTip1.SetToolTip(tb_SkipIfAIQueueTimeOverSecs, "If the AI Server queue has been busy for over this number of seconds,\r\njump to the next AITOOL server url.");
+            // 
+            // tb_MaxQueueLength
+            // 
+            tb_MaxQueueLength.Location = new System.Drawing.Point(219, 42);
+            tb_MaxQueueLength.Name = "tb_MaxQueueLength";
+            tb_MaxQueueLength.Size = new System.Drawing.Size(56, 22);
+            tb_MaxQueueLength.TabIndex = 25;
+            toolTip1.SetToolTip(tb_MaxQueueLength, "CodeProjectAI internal default maximum is 1024.  Lower this number to force the server\r\nto be 'busy' so that the next AITOOL server url in the list is used.   ");
+            // 
+            // label17
+            // 
+            label17.AutoSize = true;
+            label17.ForeColor = System.Drawing.SystemColors.ControlText;
+            label17.Location = new System.Drawing.Point(41, 102);
+            label17.Name = "label17";
+            label17.Size = new System.Drawing.Size(171, 13);
+            label17.TabIndex = 24;
+            label17.Text = "AITOOL Img Queue Larger Than:";
+            // 
+            // label16
+            // 
+            label16.AutoSize = true;
+            label16.ForeColor = System.Drawing.SystemColors.ControlText;
+            label16.Location = new System.Drawing.Point(18, 47);
+            label16.Name = "label16";
+            label16.Size = new System.Drawing.Size(194, 13);
+            label16.TabIndex = 24;
+            label16.Text = "AI Server Queue Length Larger Than:";
+            // 
+            // cb_IgnoreOffline
+            // 
+            cb_IgnoreOffline.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
+            cb_IgnoreOffline.AutoSize = true;
+            cb_IgnoreOffline.ForeColor = System.Drawing.Color.DodgerBlue;
+            cb_IgnoreOffline.Location = new System.Drawing.Point(179, 142);
+            cb_IgnoreOffline.Name = "cb_IgnoreOffline";
+            cb_IgnoreOffline.Size = new System.Drawing.Size(109, 17);
+            cb_IgnoreOffline.TabIndex = 22;
+            cb_IgnoreOffline.Text = "Ignore if Offline";
+            toolTip1.SetToolTip(cb_IgnoreOffline, "If we cant even ping the server (ie a machine is asleep part of the day) we ignore any errors and skip the URL.");
+            cb_IgnoreOffline.UseVisualStyleBackColor = true;
             // 
             // tb_Name
             // 
             tb_Name.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
             tb_Name.Location = new System.Drawing.Point(121, 33);
             tb_Name.Name = "tb_Name";
-            tb_Name.Size = new System.Drawing.Size(512, 22);
+            tb_Name.Size = new System.Drawing.Size(508, 22);
             tb_Name.TabIndex = 21;
             // 
             // label14
@@ -253,7 +405,7 @@ namespace AITool
             // 
             cb_TimeoutError.AutoSize = true;
             cb_TimeoutError.ForeColor = System.Drawing.Color.Firebrick;
-            cb_TimeoutError.Location = new System.Drawing.Point(537, 356);
+            cb_TimeoutError.Location = new System.Drawing.Point(537, 355);
             cb_TimeoutError.Name = "cb_TimeoutError";
             cb_TimeoutError.Size = new System.Drawing.Size(51, 17);
             cb_TimeoutError.TabIndex = 14;
@@ -288,7 +440,7 @@ namespace AITool
             groupBoxLinked.Controls.Add(checkedComboBoxLinked);
             groupBoxLinked.Location = new System.Drawing.Point(8, 288);
             groupBoxLinked.Name = "groupBoxLinked";
-            groupBoxLinked.Size = new System.Drawing.Size(623, 63);
+            groupBoxLinked.Size = new System.Drawing.Size(619, 63);
             groupBoxLinked.TabIndex = 17;
             groupBoxLinked.TabStop = false;
             // 
@@ -324,7 +476,7 @@ namespace AITool
             checkedComboBoxLinked.IntegralHeight = false;
             checkedComboBoxLinked.Location = new System.Drawing.Point(6, 36);
             checkedComboBoxLinked.Name = "checkedComboBoxLinked";
-            checkedComboBoxLinked.Size = new System.Drawing.Size(611, 21);
+            checkedComboBoxLinked.Size = new System.Drawing.Size(607, 21);
             checkedComboBoxLinked.TabIndex = 12;
             checkedComboBoxLinked.Text = "Click dropdown to select";
             checkedComboBoxLinked.ValueSeparator = ", ";
@@ -337,7 +489,7 @@ namespace AITool
             groupBoxRefine.Controls.Add(tb_RefinementObjects);
             groupBoxRefine.Location = new System.Drawing.Point(8, 196);
             groupBoxRefine.Name = "groupBoxRefine";
-            groupBoxRefine.Size = new System.Drawing.Size(623, 63);
+            groupBoxRefine.Size = new System.Drawing.Size(619, 63);
             groupBoxRefine.TabIndex = 16;
             groupBoxRefine.TabStop = false;
             // 
@@ -368,7 +520,7 @@ namespace AITool
             tb_RefinementObjects.Font = new System.Drawing.Font("Consolas", 8.25F);
             tb_RefinementObjects.Location = new System.Drawing.Point(8, 36);
             tb_RefinementObjects.Name = "tb_RefinementObjects";
-            tb_RefinementObjects.Size = new System.Drawing.Size(609, 20);
+            tb_RefinementObjects.Size = new System.Drawing.Size(605, 20);
             tb_RefinementObjects.TabIndex = 9;
             // 
             // tb_Upper
@@ -383,7 +535,7 @@ namespace AITool
             // tb_LinkedRefineTimeout
             // 
             tb_LinkedRefineTimeout.Font = new System.Drawing.Font("Consolas", 8.25F);
-            tb_LinkedRefineTimeout.Location = new System.Drawing.Point(446, 354);
+            tb_LinkedRefineTimeout.Location = new System.Drawing.Point(446, 353);
             tb_LinkedRefineTimeout.Name = "tb_LinkedRefineTimeout";
             tb_LinkedRefineTimeout.Size = new System.Drawing.Size(49, 20);
             tb_LinkedRefineTimeout.TabIndex = 13;
@@ -413,9 +565,9 @@ namespace AITool
             // 
             tb_timeout.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
             tb_timeout.Font = new System.Drawing.Font("Consolas", 8.25F);
-            tb_timeout.Location = new System.Drawing.Point(525, 137);
+            tb_timeout.Location = new System.Drawing.Point(121, 140);
             tb_timeout.Name = "tb_timeout";
-            tb_timeout.Size = new System.Drawing.Size(106, 20);
+            tb_timeout.Size = new System.Drawing.Size(52, 20);
             tb_timeout.TabIndex = 5;
             tb_timeout.Text = "0";
             toolTip1.SetToolTip(tb_timeout, "If you set this to any value other than 0 it will override the default timeout");
@@ -424,34 +576,12 @@ namespace AITool
             // 
             tb_ImagesPerMonth.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
             tb_ImagesPerMonth.Font = new System.Drawing.Font("Consolas", 8.25F);
-            tb_ImagesPerMonth.Location = new System.Drawing.Point(525, 112);
+            tb_ImagesPerMonth.Location = new System.Drawing.Point(584, 112);
             tb_ImagesPerMonth.Name = "tb_ImagesPerMonth";
-            tb_ImagesPerMonth.Size = new System.Drawing.Size(108, 20);
+            tb_ImagesPerMonth.Size = new System.Drawing.Size(45, 20);
             tb_ImagesPerMonth.TabIndex = 4;
             tb_ImagesPerMonth.Text = "0";
             toolTip1.SetToolTip(tb_ImagesPerMonth, "Max images per month - 0 for unlimited.    Amazon has 5000 free images a month");
-            // 
-            // btn_ImageAdjustEdit
-            // 
-            btn_ImageAdjustEdit.Location = new System.Drawing.Point(280, 138);
-            btn_ImageAdjustEdit.Name = "btn_ImageAdjustEdit";
-            btn_ImageAdjustEdit.Size = new System.Drawing.Size(31, 21);
-            btn_ImageAdjustEdit.TabIndex = 8;
-            btn_ImageAdjustEdit.Text = "···";
-            toolTip1.SetToolTip(btn_ImageAdjustEdit, "Edit the image adjust profile");
-            btn_ImageAdjustEdit.UseVisualStyleBackColor = true;
-            btn_ImageAdjustEdit.Click += btn_ImageAdjustEdit_Click;
-            // 
-            // cb_ImageAdjustProfile
-            // 
-            cb_ImageAdjustProfile.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            cb_ImageAdjustProfile.Font = new System.Drawing.Font("Consolas", 8.25F);
-            cb_ImageAdjustProfile.FormattingEnabled = true;
-            cb_ImageAdjustProfile.Location = new System.Drawing.Point(121, 138);
-            cb_ImageAdjustProfile.Name = "cb_ImageAdjustProfile";
-            cb_ImageAdjustProfile.Size = new System.Drawing.Size(152, 21);
-            cb_ImageAdjustProfile.TabIndex = 5;
-            cb_ImageAdjustProfile.TabStop = false;
             // 
             // label15
             // 
@@ -484,36 +614,26 @@ namespace AITool
             // labelTimeout
             // 
             labelTimeout.AutoSize = true;
-            labelTimeout.Location = new System.Drawing.Point(467, 142);
+            labelTimeout.Location = new System.Drawing.Point(65, 144);
             labelTimeout.Name = "labelTimeout";
             labelTimeout.Size = new System.Drawing.Size(52, 13);
             labelTimeout.TabIndex = 1;
             labelTimeout.Text = "Timeout:";
-            labelTimeout.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
             // label7
             // 
             label7.AutoSize = true;
-            label7.Location = new System.Drawing.Point(392, 116);
+            label7.Location = new System.Drawing.Point(451, 116);
             label7.Name = "label7";
             label7.Size = new System.Drawing.Size(127, 13);
             label7.TabIndex = 1;
             label7.Text = "Max Images Per Month:";
             // 
-            // label6
-            // 
-            label6.AutoSize = true;
-            label6.Location = new System.Drawing.Point(4, 142);
-            label6.Name = "label6";
-            label6.Size = new System.Drawing.Size(113, 13);
-            label6.TabIndex = 1;
-            label6.Text = "Image Adjust Profile:";
-            // 
             // linkHelpURL
             // 
             linkHelpURL.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
             linkHelpURL.AutoSize = true;
-            linkHelpURL.Location = new System.Drawing.Point(5, 395);
+            linkHelpURL.Location = new System.Drawing.Point(5, 530);
             linkHelpURL.Name = "linkHelpURL";
             linkHelpURL.Size = new System.Drawing.Size(10, 13);
             linkHelpURL.TabIndex = 8;
@@ -524,7 +644,7 @@ namespace AITool
             // btTest
             // 
             btTest.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
-            btTest.Location = new System.Drawing.Point(499, 405);
+            btTest.Location = new System.Drawing.Point(500, 533);
             btTest.Name = "btTest";
             btTest.Size = new System.Drawing.Size(70, 30);
             btTest.TabIndex = 16;
@@ -535,7 +655,7 @@ namespace AITool
             // bt_clear
             // 
             bt_clear.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
-            bt_clear.Location = new System.Drawing.Point(423, 405);
+            bt_clear.Location = new System.Drawing.Point(424, 533);
             bt_clear.Name = "bt_clear";
             bt_clear.Size = new System.Drawing.Size(70, 30);
             bt_clear.TabIndex = 15;
@@ -543,23 +663,17 @@ namespace AITool
             bt_clear.UseVisualStyleBackColor = true;
             bt_clear.Click += bt_clear_Click;
             // 
-            // cb_IgnoreOffline
+            // timer1
             // 
-            cb_IgnoreOffline.AutoSize = true;
-            cb_IgnoreOffline.ForeColor = System.Drawing.Color.DodgerBlue;
-            cb_IgnoreOffline.Location = new System.Drawing.Point(342, 141);
-            cb_IgnoreOffline.Name = "cb_IgnoreOffline";
-            cb_IgnoreOffline.Size = new System.Drawing.Size(109, 17);
-            cb_IgnoreOffline.TabIndex = 22;
-            cb_IgnoreOffline.Text = "Ignore if Offline";
-            toolTip1.SetToolTip(cb_IgnoreOffline, "If we cant even ping the server (ie a machine is asleep part of the day) we ignore any errors and skip the URL.");
-            cb_IgnoreOffline.UseVisualStyleBackColor = true;
+            timer1.Enabled = true;
+            timer1.Interval = 500;
+            timer1.Tick += timer1_Tick;
             // 
             // Frm_AIServerDeepstackEdit
             // 
             AutoScaleMode = System.Windows.Forms.AutoScaleMode.Inherit;
             AutoScroll = true;
-            ClientSize = new System.Drawing.Size(648, 442);
+            ClientSize = new System.Drawing.Size(649, 570);
             Controls.Add(bt_Save);
             Controls.Add(bt_clear);
             Controls.Add(btTest);
@@ -573,6 +687,8 @@ namespace AITool
             Load += Frm_AIServerDeepstackEdit_Load;
             groupBox1.ResumeLayout(false);
             groupBox1.PerformLayout();
+            gb_AIServerQueue.ResumeLayout(false);
+            gb_AIServerQueue.PerformLayout();
             groupBoxLinked.ResumeLayout(false);
             groupBoxLinked.PerformLayout();
             groupBoxRefine.ResumeLayout(false);
@@ -595,9 +711,6 @@ namespace AITool
         private System.Windows.Forms.ToolTip toolTip1;
         private System.Windows.Forms.CheckBox chk_Enabled;
         private System.Windows.Forms.GroupBox groupBox1;
-        private System.Windows.Forms.Button btn_ImageAdjustEdit;
-        public System.Windows.Forms.ComboBox cb_ImageAdjustProfile;
-        private System.Windows.Forms.Label label6;
         private System.Windows.Forms.TextBox tb_ImagesPerMonth;
         private System.Windows.Forms.Label label7;
         private System.Windows.Forms.LinkLabel linkHelpURL;
@@ -627,5 +740,18 @@ namespace AITool
         private System.Windows.Forms.TextBox tb_Name;
         private System.Windows.Forms.Label label15;
         private System.Windows.Forms.CheckBox cb_IgnoreOffline;
+        private System.Windows.Forms.CheckBox cb_AllowAIServerBasedQueue;
+        private System.Windows.Forms.TextBox tb_MaxQueueLength;
+        private System.Windows.Forms.Label label16;
+        private System.Windows.Forms.GroupBox gb_AIServerQueue;
+        private System.Windows.Forms.TextBox tb_SkipIfImgQueueLengthLarger;
+        private System.Windows.Forms.Label label17;
+        private System.Windows.Forms.Label label18;
+        private System.Windows.Forms.Label label19;
+        private System.Windows.Forms.TextBox tb_SkipIfAIQueueTimeOverSecs;
+        private System.Windows.Forms.Label lbl_QueueLengthStats;
+        private System.Windows.Forms.Label lbl_ImgQueueStats;
+        private System.Windows.Forms.Label lbl_QueueTimeStats;
+        private System.Windows.Forms.Timer timer1;
     }
 }

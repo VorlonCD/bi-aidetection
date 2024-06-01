@@ -1,16 +1,14 @@
-﻿using Newtonsoft.Json;
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Security.AccessControl;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Timers;
 using System.Xml.Linq;
 using System.Xml.XPath;
+
+using Newtonsoft.Json;
 
 using static AITool.AITOOL;
 
@@ -26,7 +24,7 @@ namespace AITool
         private static string LastSettingsJSON = "";
         private static ClsDeepstackDetection ThreadLock = new ClsDeepstackDetection();
         private static SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);
-        private static ThreadSafe.Datetime _LastSaveTime = new ThreadSafe.Datetime(DateTime.MinValue);
+        private static ThreadSafe.DateTime _LastSaveTime = new ThreadSafe.DateTime(DateTime.MinValue, AppSettings.Settings.DateFormat);
         private static ThreadSafe.Boolean _AlreadySaving = new ThreadSafe.Boolean(false);
         public class ClsSettings
         {
@@ -137,7 +135,7 @@ namespace AITool
             public bool log_mnu_Filter = true;
             public bool log_mnu_Highlight = false;
             public int MaxGUILogItems = 5000; //makes to slow to work with if too high
-            public string DateFormat = "dd.MM.yy, HH:mm:ss";
+            public string DateFormat = "yyyy-MM-dd hh:mm:ss"; //"dd.MM.yy, HH:mm:ss";
             public string DisplayPercentageFormat = "({0:0}%)";
             public int TimeBetweenListRefreshsMS = 5000;
 
@@ -201,6 +199,9 @@ namespace AITool
 
             public int SaveSettingsIntervalSeconds = 30;
 
+            public bool Tick = false;
+            public string TickImageAddedSoundFile = "tick.wav";
+
             //public bool TopMost = true;   //keep the main form on top of all other windows
         }
 
@@ -223,20 +224,20 @@ namespace AITool
         {
             //using var Trace = new Trace();  //This c# 8.0 using feature will auto dispose when the function is done.
 
-            double lastsecs = (DateTime.Now - _LastSaveTime.Read()).TotalSeconds;
+            double lastsecs = (DateTime.Now - _LastSaveTime).TotalSeconds;
 
             if (!force && lastsecs < AppSettings.Settings.SaveSettingsIntervalSeconds)
                 return false;
 
 
-            if (_AlreadySaving.ReadFullFence())
+            if (_AlreadySaving)
             {
                 Log("Trace: *** Had to exit from save? ***");
                 return false;
             }
 
             //await semaphoreSlim.WaitAsync();
-            _AlreadySaving.WriteFullFence(true);
+            _AlreadySaving = true;
 
             bool Ret = false;
             try
@@ -347,9 +348,9 @@ namespace AITool
 
             //semaphoreSlim.Release();
 
-            _AlreadySaving.WriteFullFence(false);
+            _AlreadySaving = false;
 
-            _LastSaveTime.Write(DateTime.Now);
+            _LastSaveTime = DateTime.Now;
 
             return Ret;
         }
@@ -837,10 +838,10 @@ namespace AITool
                     for (int i = 0; i < AppSettings.Settings.AIURLList.Count; i++)
                     {
                         AppSettings.Settings.AIURLList[i].Order = i + 1;
-                        if (!AITOOL.HasImageAdjustProfile(AppSettings.Settings.AIURLList[i].ImageAdjustProfile))
-                        {
-                            AppSettings.Settings.AIURLList[i].ImageAdjustProfile = "Default";
-                        }
+                        //if (!AITOOL.HasImageAdjustProfile(AppSettings.Settings.AIURLList[i].ImageAdjustProfile))
+                        //{
+                        //    AppSettings.Settings.AIURLList[i].ImageAdjustProfile = "Default";
+                        //}
                     }
 
                     string facefile = Path.Combine(Settings.FacesPath, "Faces.JSON");

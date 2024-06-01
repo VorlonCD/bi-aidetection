@@ -177,7 +177,7 @@ namespace AITool
         [JsonIgnore]
         public ThreadSafe.Boolean Action_Cancel_Timer_Enabled { get; set; } = new ThreadSafe.Boolean(false);
         [JsonIgnore]
-        public ThreadSafe.Datetime Action_Cancel_Start_Time { get; set; } = new ThreadSafe.Datetime(DateTime.MinValue);
+        public ThreadSafe.DateTime Action_Cancel_Start_Time { get; set; } = new ThreadSafe.DateTime(DateTime.MinValue, AppSettings.Settings.DateFormat);
 
         public MaskManager maskManager { get; set; } = new MaskManager();
         public int mask_brush_size { get; set; } = 35;
@@ -231,9 +231,9 @@ namespace AITool
         public string CameraGroup { get; set; } = "";
 
         [JsonIgnore]
-        public ThreadSafe.Datetime last_trigger_time { get; set; } = new ThreadSafe.Datetime(DateTime.MinValue);
+        public ThreadSafe.DateTime last_trigger_time { get; set; } = new ThreadSafe.DateTime(DateTime.MinValue, AppSettings.Settings.DateFormat);
         [JsonIgnore]
-        public ThreadSafe.Datetime last_sound_time { get; set; } = new ThreadSafe.Datetime(DateTime.MinValue);
+        public ThreadSafe.DateTime last_sound_time { get; set; } = new ThreadSafe.DateTime(DateTime.MinValue, AppSettings.Settings.DateFormat);
 
         [JsonIgnore]
         public string LastGetCameraMatchResult { get; set; } = "";

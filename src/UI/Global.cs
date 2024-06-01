@@ -2220,6 +2220,19 @@ namespace AITool
             return "^" + Regex.Escape(value).Replace("\\?", ".").Replace("\\*", ".*") + "$";
         }
 
+        public static void PlayTick(SoundPlayer player)
+        {
+            if (AppSettings.Settings.Tick && player != null)
+            {
+                // Play the sound asynchronously
+                Task.Run(() =>
+                {
+                    // Rewind the player and play the sound
+                    player.PlaySync();
+                });
+
+            }
+        }
         public static void SendMessage(MessageType MT, string Descript = "", object Payload = null, [CallerMemberName] string memberName = null)
         {
             if (progress == null)
@@ -2312,7 +2325,7 @@ namespace AITool
                     else if (parts[0].EqualsIgnoreCase("restart") || parts[0].EqualsIgnoreCase("restartaitool"))
                     {
                         await AITOOL.Telegram.SendTextMessageAsync(AppSettings.Settings.telegram_chatids.GetStrAtIndex(0), $"Restarting AITOOL...");
-                        Restart.WriteFullFence(true);
+                        Restart = true;
                         Application.Exit();
 
                     }

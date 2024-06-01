@@ -1,8 +1,4 @@
-﻿using NLog;
-using NLog.Targets;
-using NLog.Targets.Wrappers;
-
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -10,9 +6,12 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Security.AccessControl;
 using System.Threading;
 using System.Threading.Tasks;
+
+using NLog;
+using NLog.Targets;
+using NLog.Targets.Wrappers;
 
 namespace AITool
 {
@@ -215,13 +214,13 @@ namespace AITool
                 NLog.LogManager.Flush();
                 this.Values.Clear();
                 this.LastLogItm = new ClsLogItm();
-                this._LastIDX.WriteFullFence(0);
+                this._LastIDX = 0;
                 this._LastAIServer = "";
                 this._LastCamera = "";
                 this._LastImage = "";
                 this.RecentlyAdded = new ConcurrentQueue<ClsLogItm>();
                 this.RecentlyDeleted = new ConcurrentQueue<ClsLogItm>();
-                this.ErrorCount.WriteFullFence(0);
+                this.ErrorCount = 0;
                 this._Filename = this.GetCurrentLogFileName();
 
             }
@@ -232,7 +231,7 @@ namespace AITool
         {
             lock (this._LockObj)
             {
-                this._LastIDX.WriteFullFence(CDI.Idx);
+                this._LastIDX = CDI.Idx;
                 this.LastLogItm = CDI;
                 this.Values.Add(this.LastLogItm);
             }
@@ -244,7 +243,7 @@ namespace AITool
             {
                 foreach (ClsLogItm CDI in CDIList)
                 {
-                    this._LastIDX.WriteFullFence(CDI.Idx);
+                    this._LastIDX = CDI.Idx;
                     this.LastLogItm = CDI;
                     this.Values.Add(this.LastLogItm);
                 }
@@ -253,23 +252,23 @@ namespace AITool
 
         public void Enter([CallerMemberName()] string memberName = null)
         {
-            this._CurDepth.AtomicIncrementAndGet();
+            this._CurDepth++;
 
-            if (this._CurDepth.ReadFullFence() > 10)
-                this._CurDepth.WriteFullFence(10);  //just in case something weird is going on
+            if (this._CurDepth > 10)
+                this._CurDepth = 10;  //just in case something weird is going on
 
             if (this.MinLevel == LogLevel.Trace)
-                this.Log($"---->ENTER {memberName}, Depth={this._CurDepth.ReadFullFence()}", "Trace-Enter", "Trace-Enter", "", "", 0, LogLevel.Trace, DateTime.Now, memberName);
+                this.Log($"---->ENTER {memberName}, Depth={this._CurDepth}", "Trace-Enter", "Trace-Enter", "", "", 0, LogLevel.Trace, DateTime.Now, memberName);
 
         }
         public void Exit([CallerMemberName()] string memberName = null, long timems = 0)
         {
-            this._CurDepth.AtomicDecrementAndGet();
-            if (this._CurDepth.ReadFullFence() < 0)
-                this._CurDepth.WriteFullFence(0);
+            this._CurDepth.Decrement(0);
+            if (this._CurDepth < 0)
+                this._CurDepth = 0;
 
             if (this.MinLevel == LogLevel.Trace)
-                this.Log($"----<EXIT {memberName}, Time={timems}ms, Depth={this._CurDepth.ReadFullFence()}", "Trace-Exit", "Trace-Exit", "", "", 0, LogLevel.Trace, DateTime.Now, memberName);
+                this.Log($"----<EXIT {memberName}, Time={timems}ms, Depth={this._CurDepth}", "Trace-Exit", "Trace-Exit", "", "", 0, LogLevel.Trace, DateTime.Now, memberName);
         }
         public ClsLogItm Log(string Detail, string AIServer = "", string Camera = "", string Image = "", string Source = "", int Depth = 0, LogLevel Level = null, Nullable<DateTime> Time = default(DateTime?), [CallerMemberName()] string memberName = null)
         {
@@ -278,7 +277,7 @@ namespace AITool
 
             lock (this._LockObj)
             {
-                this._LastIDX.AtomicIncrementAndGet();
+                this._LastIDX++;
                 this.LastLogItm = new ClsLogItm();
                 this.LastLogItm.Detail = Detail.Replace("|", ";");
                 this.LastLogItm.Filename = Path.GetFileName(this._Filename);
@@ -356,19 +355,19 @@ namespace AITool
                 //remove tags
                 if (Level == LogLevel.Error)
                 {
-                    this.ErrorCount.AtomicIncrementAndGet();
+                    this.ErrorCount++;
                     HasError = true;
                     this.LastLogItm.Detail = Global.ReplaceCaseInsensitive(this.LastLogItm.Detail, "error:", "");
                 }
                 else if (Level == LogLevel.Fatal)
                 {
-                    this.ErrorCount.AtomicIncrementAndGet();
+                    this.ErrorCount++;
                     HasError = true;
                     this.LastLogItm.Detail = Global.ReplaceCaseInsensitive(this.LastLogItm.Detail, "fatal:", "");
                 }
                 else if (Level == LogLevel.Warn)
                 {
-                    this.ErrorCount.AtomicIncrementAndGet();
+                    this.ErrorCount++;
                     HasError = true;
                     this.LastLogItm.Detail = Global.ReplaceCaseInsensitive(this.LastLogItm.Detail, "warn:", "");
                     this.LastLogItm.Detail = Global.ReplaceCaseInsensitive(this.LastLogItm.Detail, "warning:", "");
@@ -396,12 +395,12 @@ namespace AITool
                 //clean out any whitespace
                 //this.LastLogItm.Detail = this.LastLogItm.Detail.TrimStart();
 
-                if (this._CurDepth.ReadFullFence() + Depth > 0)
-                    this.LastLogItm.Detail = new string(' ', (this._CurDepth.ReadFullFence() + Depth * 2)) + this.LastLogItm.Detail;
+                if (this._CurDepth + Depth > 0)
+                    this.LastLogItm.Detail = new string(' ', (this._CurDepth + Depth * 2)) + this.LastLogItm.Detail;
 
-                this.LastLogItm.Depth = this._CurDepth.ReadFullFence() + Depth;
+                this.LastLogItm.Depth = this._CurDepth + Depth;
                 this.LastLogItm.Level = Level;
-                this.LastLogItm.Idx = this._LastIDX.ReadFullFence();
+                this.LastLogItm.Idx = this._LastIDX;
 
 
                 if (this._Store)
@@ -544,7 +543,7 @@ namespace AITool
                                         if (!OldFile && line.TrimStart().StartsWith("["))  //old log format, ignore
                                         {
                                             OldFile = true;
-                                            this._LastIDX.WriteFullFence(0);
+                                            this._LastIDX = 0;
                                             break;
                                         }
 
@@ -604,7 +603,7 @@ namespace AITool
                                                     {
                                                         this.Log($"Error: Too many invalid lines ({Invalid}) stopping load.");
                                                         ret.Clear();
-                                                        this._LastIDX.WriteFullFence(0);
+                                                        this._LastIDX = 0;
                                                         break;
                                                     }
                                                     else

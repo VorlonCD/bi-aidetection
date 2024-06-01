@@ -402,11 +402,11 @@ namespace AITool
                     //            ClsURLItem obj = (ClsURLItem)rowObject;
                     //            if (ei.Name == "Enabled")
                     //            {
-                    //                ret = obj.Enabled.ReadFullFence();
+                    //                ret = obj.Enabled;
                     //            }
                     //            else if (ei.Name == "InUse")
                     //            {
-                    //                ret = obj.InUse.ReadFullFence();
+                    //                ret = obj.InUse;
                     //            }
                     //            else
                     //            {
@@ -950,7 +950,7 @@ namespace AITool
             // This will let you update any control from another thread - It only invokes IF NEEDED for better performance 
             // See TextBoxLogger.Log for example
 
-            if (control != null && !control.IsDisposed && !control.Disposing && control.IsHandleCreated && control.FindForm().IsHandleCreated && !IsClosing.ReadFullFence())
+            if (control != null && !control.IsDisposed && !control.Disposing && control.IsHandleCreated && control.FindForm().IsHandleCreated && !IsClosing)
             {
                 if (control.InvokeRequired)
                 {

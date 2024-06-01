@@ -1,4 +1,19 @@
-﻿using AITool.Properties;
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Diagnostics;
+using System.Drawing;
+using System.IO;
+using System.Linq;
+using System.Media;
+using System.Net;
+using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Timers;
+using System.Windows.Forms;
+using System.Windows.Forms.DataVisualization.Charting;
 
 using BrightIdeasSoftware;
 
@@ -8,34 +23,15 @@ using Newtonsoft.Json; //deserialize DeepquestAI response
 
 using NLog;
 
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Diagnostics;
-using System.Drawing;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Reflection;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Timers;
-using System.Windows.Forms;
-using System.Windows.Forms.DataVisualization.Charting;
-
-
-using static AITool.Global;
 using static AITool.AITOOL;
-using System.Text.RegularExpressions;
-using System.Speech.Synthesis;
+using static AITool.Global;
 
 namespace AITool
 {
 
     public partial class Shell:Form
     {
-        private ThreadSafe.Datetime LastListUpdate = new ThreadSafe.Datetime(DateTime.MinValue);
+        private ThreadSafe.DateTime LastListUpdate = new ThreadSafe.DateTime(DateTime.MinValue, AppSettings.Settings.DateFormat);
 
         private ThreadSafe.Boolean DatabaseInitialized = new ThreadSafe.Boolean(false);
 
@@ -147,7 +143,7 @@ namespace AITool
                 {
                     this.SplashScreen.Close();
                     this.SplashScreen = null;
-                    CloseImmediately.WriteFullFence(true);
+                    CloseImmediately = true;
                     Application.Exit();
                 }
             }
@@ -306,7 +302,7 @@ namespace AITool
 
                 //---------------------------------------------------------------------------------------------------------
 
-                IsLoading.WriteFullFence(false);
+                IsLoading = false;
 
                 this.Resize += new System.EventHandler(this.Form1_Resize); //resize event to enable 'minimize to tray'
 
@@ -426,11 +422,11 @@ namespace AITool
         {
             using var Trace = new Trace();  //This c# 8.0 using feature will auto dispose when the function is done.
 
-            if (IsLoading.ReadFullFence())
+            if (IsLoading)
                 return;
 
-            if (!this.IsLogListUpdating.ReadFullFence() && Force ||
-                !this.IsLogListUpdating.ReadFullFence() &&
+            if (!this.IsLogListUpdating && Force ||
+                !this.IsLogListUpdating &&
                 (this.tabControl1.SelectedTab == this.tabControl1.TabPages["tabLog"]) &&
                 this.Visible &&
                 !(this.WindowState == FormWindowState.Minimized) &&
@@ -441,7 +437,7 @@ namespace AITool
                 //{
                 Stopwatch sw = Stopwatch.StartNew();
 
-                this.IsLogListUpdating.WriteFullFence(true);
+                this.IsLogListUpdating = true;
 
                 Global_GUI.InvokeIFRequired(this.folv_log, async () =>
                 {
@@ -487,7 +483,7 @@ namespace AITool
 
                 //});
 
-                this.IsLogListUpdating.WriteFullFence(false);
+                this.IsLogListUpdating = false;
 
             }
             else
@@ -501,20 +497,20 @@ namespace AITool
             //Log("===Enter");
             //this should be a quicker full list update
             if (AppSettings.Settings.HistoryAutoRefresh &&
-                !this.IsHistoryListUpdating.ReadFullFence() &&
+                !this.IsHistoryListUpdating &&
                 this.tabControl1.SelectedIndex == 2 &&
                 this.Visible &&
                 !(this.WindowState == FormWindowState.Minimized) &&
-                (DateTime.Now - this.LastListUpdate.Read()).TotalMilliseconds >= AppSettings.Settings.TimeBetweenListRefreshsMS &&
-                this.DatabaseInitialized.ReadFullFence() &&
-                !IsLoading.ReadFullFence() &&
+                (DateTime.Now - this.LastListUpdate).TotalMilliseconds >= AppSettings.Settings.TimeBetweenListRefreshsMS &&
+                this.DatabaseInitialized &&
+                !IsLoading &&
                 await HistoryDB.HasUpdates())
             {
                 // run in another thread so gui doesnt freeze
                 await Task.Run(() =>
                 {
 
-                    this.IsHistoryListUpdating.WriteFullFence(true);
+                    this.IsHistoryListUpdating = true;
 
                     Global_GUI.InvokeIFRequired(this.folv_history, () =>
                     {
@@ -563,9 +559,9 @@ namespace AITool
 
                         }
 
-                        this.LastListUpdate.Write(DateTime.Now);
+                        this.LastListUpdate = DateTime.Now;
 
-                        this.IsHistoryListUpdating.WriteFullFence(false);
+                        this.IsHistoryListUpdating = false;
 
                         //UpdateToolstrip("");
 
@@ -576,7 +572,7 @@ namespace AITool
             }
             else
             {
-                //Log($"Debug: List not updated - Refresh={AppSettings.Settings.HistoryAutoRefresh}, Visible={tabControl1.SelectedIndex == 2 && this.Visible && !(this.WindowState == FormWindowState.Minimized)}, IsListUpdating={this.IsListUpdating.ReadFullFence()}, LastListUpdateMS={(DateTime.Now - this.LastListUpdate.Read()).TotalMilliseconds}");
+                //Log($"Debug: List not updated - Refresh={AppSettings.Settings.HistoryAutoRefresh}, Visible={tabControl1.SelectedIndex == 2 && this.Visible && !(this.WindowState == FormWindowState.Minimized)}, IsListUpdating={this.IsListUpdating}, LastListUpdateMS={(DateTime.Now - this.LastListUpdate).TotalMilliseconds}");
             }
             //Log("===Exit");
 
@@ -601,7 +597,7 @@ namespace AITool
 
         async void EventMessage(ClsMessage msg)
         {
-            if (IsClosing.ReadFullFence())
+            if (IsClosing)
                 return;
 
             using var Trace = new Trace();  //This c# 8.0 using feature will auto dispose when the function is done.
@@ -618,7 +614,7 @@ namespace AITool
 
                 this.folv_history.EmptyListMsg = "No History";
 
-                this.DatabaseInitialized.WriteFullFence(true);
+                this.DatabaseInitialized = true;
                 await this.LoadHistoryAsync(true, true);
                 this.HistoryStartStop();
 
@@ -749,7 +745,7 @@ namespace AITool
         private void UpdateProgressBar(string Message, int CurVal = -1, int MinVal = -1, int MaxVal = -1)
         {
 
-            if (IsClosing.ReadFullFence())
+            if (IsClosing)
                 return;
 
             if (this.SplashScreen != null)
@@ -863,7 +859,7 @@ namespace AITool
         //public async void Log(string text, [CallerMemberName] string memberName = null)
         //{
 
-        //    if (IsClosing.ReadFullFence())
+        //    if (IsClosing)
         //        return;
 
         //    try
@@ -992,10 +988,10 @@ namespace AITool
         private void Form1_Resize(object sender, EventArgs e)
         {
 
-            if (IsLoading.ReadFullFence())
+            if (IsLoading)
                 return;
 
-            if (IsClosing.ReadFullFence())
+            if (IsClosing)
                 return;
 
             if (this.WindowState == FormWindowState.Minimized)
@@ -1021,7 +1017,7 @@ namespace AITool
         private async void ShowForm()
         {
 
-            if (IsClosing.ReadFullFence())
+            if (IsClosing)
                 return;
 
             try
@@ -1046,7 +1042,7 @@ namespace AITool
         private async void HideForm()
         {
 
-            if (IsClosing.ReadFullFence())
+            if (IsClosing)
                 return;
 
             if (!AppSettings.Settings.MinimizeToTray)
@@ -1854,7 +1850,7 @@ namespace AITool
             try
             {
                 //make tray icon red if there are errors
-                if (LogMan.ErrorCount.ReadFullFence() == 0 && !showingtrayok)
+                if (LogMan.ErrorCount == 0 && !showingtrayok)
                 {
                     this.notifyIcon.Icon = AITool.Properties.Resources.Logo_old;
                     this.Icon = AITool.Properties.Resources.Logo_old;
@@ -1862,7 +1858,7 @@ namespace AITool
                     showingtrayok = true;
                     showingtrayerr = false;
                 }
-                else if (LogMan.ErrorCount.ReadFullFence() > 0 && !showingtrayerr)
+                else if (LogMan.ErrorCount > 0 && !showingtrayerr)
                 {
                     this.notifyIcon.Icon = AITool.Properties.Resources.Logo_Error_old;
                     this.Icon = AITool.Properties.Resources.Logo_Error_old;
@@ -1875,16 +1871,19 @@ namespace AITool
             catch { }
         }
 
+
+
         private void UpdateStats(string Message = "")
         {
             try
             {
                 UpdateErrorIcon();
 
-                if (!this.Visible || (this.WindowState == FormWindowState.Minimized) || this.IsStatsUpdating.ReadFullFence() || IsClosing.ReadFullFence())
+
+                if (!this.Visible || (this.WindowState == FormWindowState.Minimized) || this.IsStatsUpdating || IsClosing)
                     return;  //save a tree
 
-                this.IsStatsUpdating.WriteFullFence(true);
+                this.IsStatsUpdating = true;
 
                 int alerts = 0;
                 int irrelevantalerts = 0;
@@ -1910,16 +1909,16 @@ namespace AITool
                     if (HistoryDB != null)
                     {
                         items = HistoryDB.HistoryDic.Count;
-                        removed = HistoryDB.DeletedCount.ReadFullFence();
+                        removed = HistoryDB.DeletedCount;
                     }
 
-                    if (HistoryDB != null && HistoryDB.AddedCount.ReadFullFence() > 0)
-                        hpm = HistoryDB.AddedCount.ReadFullFence() / (DateTime.Now - HistoryDB.InitializeTime).TotalMinutes;
+                    if (HistoryDB != null && HistoryDB.AddedCount > 0)
+                        hpm = HistoryDB.AddedCount / (DateTime.Now - HistoryDB.InitializeTime).TotalMinutes;
 
                     this.toolStripStatusLabelHistoryItems.Text = $"{items} history items ({hpm.ToString("###0")}/MIN) | {removed} removed |";
                     int TriggerActionQueueCount = 0;
                     if (TriggerActionQueue != null)
-                        TriggerActionQueueCount = TriggerActionQueue.Count.ReadFullFence();
+                        TriggerActionQueueCount = TriggerActionQueue.Count;
 
                     this.toolStripStatusLabel1.Text = $"| {alerts} Alerts | {irrelevantalerts} Irrelevant | {falsealerts} False | {skipped} Skipped ({newskipped} new) | {qcalc.Count} ImgProcessed ({qcalc.ItemsPerMinute().ToString("###0")}/MIN) | {ImageProcessQueue.Count} ImgQueued (Max={scalc.Max},Avg={Math.Round(scalc.Avg, 0)}) | {TriggerActionQueueCount} ActQueued (Min={TriggerActionQueue.ActionTimeCalc.Min.Round(0)}ms/Max={TriggerActionQueue.ActionTimeCalc.Max.Round(0)}ms)";
 
@@ -1944,7 +1943,7 @@ namespace AITool
                     //}
 
 
-                    if (LogMan.ErrorCount.ReadFullFence() > 0)
+                    if (LogMan.ErrorCount > 0)
                     {
                         this.toolStripStatusErrors.ForeColor = Color.Black;
                         this.toolStripStatusErrors.BackColor = Color.Red;
@@ -1966,7 +1965,7 @@ namespace AITool
                 });
                 Global_GUI.InvokeIFRequired(this.lbl_errors, () =>
                 {
-                    if (LogMan.ErrorCount.ReadFullFence() > 0)
+                    if (LogMan.ErrorCount > 0)
                         this.lbl_errors.Text = $"{LogMan.ErrorCount} error(s) occurred. Click to open Log."; //update error counter label
                     else
                         this.lbl_errors.Text = "";
@@ -1983,7 +1982,7 @@ namespace AITool
             }
             finally
             {
-                this.IsStatsUpdating.WriteFullFence(false);
+                this.IsStatsUpdating = false;
             }
         }
         //load stored entries in history CSV into history ListView
@@ -1993,7 +1992,7 @@ namespace AITool
             using var Trace = new Trace();  //This c# 8.0 using feature will auto dispose when the function is done.
 
 
-            //if (IsLoading.ReadFullFence())  //when you set checkboxes during init, it may trigger the event to load the history
+            //if (IsLoading)  //when you set checkboxes during init, it may trigger the event to load the history
             //{
             //    //Log("---Exit (still loading)");
             //    return;
@@ -2002,7 +2001,7 @@ namespace AITool
             //make sure only one thread updating at a time
             //await Semaphore_List_Updating.WaitAsync();
 
-            if (this.IsHistoryListUpdating.ReadFullFence())
+            if (this.IsHistoryListUpdating)
             {
                 Log("Trace: ---Exit (already updating)");
                 return;
@@ -2010,8 +2009,8 @@ namespace AITool
 
             Stopwatch semsw = Stopwatch.StartNew();
 
-            this.IsHistoryListUpdating.WriteFullFence(true);
-            this.LastListUpdate.Write(DateTime.Now);
+            this.IsHistoryListUpdating = true;
+            this.LastListUpdate = DateTime.Now;
 
             Global_GUI.CursorWait cw = null;
 
@@ -2025,7 +2024,7 @@ namespace AITool
                 bool displayed = false;
                 do
                 {
-                    if (HistoryDB != null && HistoryDB.HistoryDic != null && this.folv_history != null && this.DatabaseInitialized.ReadFullFence())
+                    if (HistoryDB != null && HistoryDB.HistoryDic != null && this.folv_history != null && this.DatabaseInitialized)
                         break;
                     else if (!displayed)
                     {
@@ -2140,8 +2139,8 @@ namespace AITool
             {
                 if (cw != null)
                     cw.Dispose();
-                this.LastListUpdate.Write(DateTime.Now);
-                this.IsHistoryListUpdating.WriteFullFence(false);
+                this.LastListUpdate = DateTime.Now;
+                this.IsHistoryListUpdating = false;
                 //Semaphore_List_Updating.Release();
                 //Log("---Exit");
 
@@ -3154,7 +3153,7 @@ namespace AITool
         //ask before closing AI Tool to prevent accidentally closing
         private async void Shell_FormClosing(object sender, FormClosingEventArgs e)
         {
-            if (IsClosing.ReadFullFence())
+            if (IsClosing)
                 return;
 
             using var Trace = new Trace();  //This c# 8.0 using feature will auto dispose when the function is done.
@@ -3164,7 +3163,7 @@ namespace AITool
 
             try
             {
-                if (!Restart.ReadFullFence() && !ResetSettings.ReadFullFence() && !CloseImmediately.ReadFullFence() && e.CloseReason != CloseReason.WindowsShutDown && AppSettings.Settings.close_instantly <= 0) //if it's either enabled or not set  -1 = not set | 0 = ask for confirmation | 1 = don't ask
+                if (!Restart && !ResetSettings && !CloseImmediately && e.CloseReason != CloseReason.WindowsShutDown && AppSettings.Settings.close_instantly <= 0) //if it's either enabled or not set  -1 = not set | 0 = ask for confirmation | 1 = don't ask
                 {
                     using (var form = new InputForm($"Stop and close AI Tool?", "AI Tool", false))
                     {
@@ -3194,7 +3193,7 @@ namespace AITool
                 if (!e.Cancel)
                 {
 
-                    if (!Restart.ReadFullFence())
+                    if (!Restart)
                         Global_GUI.SaveWindowState(this);
 
                     AppSettings.SaveAsync(true);  //save settings in any case
@@ -3202,7 +3201,7 @@ namespace AITool
                     //if (AITOOL.DeepStackServerControl.IsInstalled && AITOOL.DeepStackServerControl.IsStarted && AppSettings.Settings.deepstack_autostart)
                     //    await AITOOL.DeepStackServerControl.StopAsync();
 
-                    IsClosing.WriteFullFence(true);
+                    IsClosing = true;
 
                     if (!AppSettings.AlreadyRunning)
                         Global.SaveRegSetting("LastShutdownState", "graceful shutdown");
@@ -3212,10 +3211,10 @@ namespace AITool
                     //wait a bit for the loops to cancel to avoid other threading errors on shutdown and to allow the logs to finish updating if we need to reset settings
                     Global.ResponsiveSleep(1000);
 
-                    if (Restart.ReadFullFence())
+                    if (Restart)
                         Application.Restart();
 
-                    if (ResetSettings.ReadFullFence())
+                    if (ResetSettings)
                     {
                         //make a backup copy:
                         string cursettingsfolder = Path.GetDirectoryName(AppSettings.Settings.SettingsFileName);
@@ -3319,7 +3318,7 @@ namespace AITool
                     }
                     else
                     {
-                        if (DeepStackServerControl.Starting.ReadFullFence())
+                        if (DeepStackServerControl.Starting)
                         {
                             this.Lbl_BlueStackRunning.Text = "STARTING...";
                             this.Lbl_BlueStackRunning.ForeColor = Color.DodgerBlue;
@@ -3327,7 +3326,7 @@ namespace AITool
                             this.Btn_Stop.Enabled = true;
 
                         }
-                        else if (DeepStackServerControl.Stopping.ReadFullFence())
+                        else if (DeepStackServerControl.Stopping)
                         {
                             this.Lbl_BlueStackRunning.Text = "STOPPING...";
                             this.Lbl_BlueStackRunning.ForeColor = Color.DodgerBlue;
@@ -3491,7 +3490,7 @@ namespace AITool
                         }
                         else
                         {
-                            if (DeepStackServerControl.Starting.ReadFullFence())
+                            if (DeepStackServerControl.Starting)
                             {
                                 this.Lbl_BlueStackRunning.Text = "STARTING...";
                                 this.Lbl_BlueStackRunning.ForeColor = Color.DodgerBlue;
@@ -3499,7 +3498,7 @@ namespace AITool
                                 this.Btn_Stop.Enabled = true;
 
                             }
-                            else if (DeepStackServerControl.Stopping.ReadFullFence())
+                            else if (DeepStackServerControl.Stopping)
                             {
                                 this.Lbl_BlueStackRunning.Text = "STOPPING...";
                                 this.Lbl_BlueStackRunning.ForeColor = Color.DodgerBlue;
@@ -4007,7 +4006,7 @@ namespace AITool
         private void folv_history_SelectionChanged(object sender, EventArgs e)
         {
 
-            if (IsClosing.ReadFullFence())
+            if (IsClosing)
                 return;
 
             string filename = "";
@@ -4179,7 +4178,7 @@ namespace AITool
             scalc.Clear();
             tcalc.Clear();
 
-            LogMan.ErrorCount.WriteFullFence(0);
+            LogMan.ErrorCount = 0;
 
             AppSettings.SaveAsync(true);
 
@@ -4195,7 +4194,7 @@ namespace AITool
 
         private async void HistoryUpdateListTimer_Tick(object sender, EventArgs e)
         {
-            if (IsClosing.ReadFullFence())
+            if (IsClosing)
                 return;
 
             if (!AppSettings.AlreadyRunning)
@@ -4214,7 +4213,7 @@ namespace AITool
         private void toolStripStatusErrors_Click(object sender, EventArgs e)
         {
             this.ShowErrors();
-            LogMan.ErrorCount.WriteFullFence(0);
+            LogMan.ErrorCount = 0;
         }
 
         private async void cb_follow_CheckedChanged(object sender, EventArgs e)
@@ -4565,7 +4564,7 @@ namespace AITool
 
         private async void FilterLogErrors()
         {
-            if (IsLoading.ReadFullFence())
+            if (IsLoading)
                 return;
 
 
@@ -4592,7 +4591,7 @@ namespace AITool
 
         private async Task<bool> FilterHistItem(History hist)
         {
-            if (IsLoading.ReadFullFence())
+            if (IsLoading)
                 return false;
 
             bool ret = false;
@@ -4838,7 +4837,7 @@ namespace AITool
         private void filter_CheckStateChanged(object sender, EventArgs e)
         {
 
-            if (IsLoading.ReadFullFence())
+            if (IsLoading)
                 return;
 
             ToolStripMenuItem currentItem = (ToolStripMenuItem)sender;
@@ -4859,7 +4858,7 @@ namespace AITool
                 AppSettings.Settings.log_mnu_Filter = this.mnu_Filter.Checked;
                 AppSettings.Settings.log_mnu_Highlight = this.mnu_Highlight.Checked;
 
-                if (!IsLoading.ReadFullFence() && Global.IsRegexPatternValid(this.ToolStripComboBoxSearch.Text))
+                if (!IsLoading && Global.IsRegexPatternValid(this.ToolStripComboBoxSearch.Text))
                 {
                     bool Filter = false;
                     if (this.mnu_Filter.Checked && !this.mnu_Highlight.Checked)
@@ -4877,7 +4876,7 @@ namespace AITool
         private void Log_Filter_CheckStateChanged(object sender, EventArgs e)
         {
 
-            if (IsLoading.ReadFullFence())
+            if (IsLoading)
                 return;
 
             ToolStripMenuItem currentItem = (ToolStripMenuItem)sender;
@@ -4893,7 +4892,7 @@ namespace AITool
                     }
                 }
 
-                if (!IsLoading.ReadFullFence())
+                if (!IsLoading)
                 {
                     AppSettings.Settings.LogLevel = currentItem.Text;
 
@@ -4915,7 +4914,7 @@ namespace AITool
 
         private void ToolStripComboBoxSearch_TextChanged(object sender, EventArgs e)
         {
-            if (IsLoading.ReadFullFence())
+            if (IsLoading)
                 return;
 
             if (!this.tmr.Enabled)
@@ -4999,7 +4998,7 @@ namespace AITool
 
         private void clearRecentErrorsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            LogMan.ErrorCount.WriteFullFence(0);
+            LogMan.ErrorCount = 0;
         }
 
         private async void locateInLogToolStripMenuItem_Click(object sender, EventArgs e)
@@ -5019,7 +5018,7 @@ namespace AITool
 
         private void StartPauseLog()
         {
-            if (IsLoading.ReadFullFence())
+            if (IsLoading)
                 return;
 
             if (!this.toolStripButtonPauseLog.Checked)
@@ -5043,7 +5042,7 @@ namespace AITool
 
         private async void ReloadLog()
         {
-            if (IsLoading.ReadFullFence())
+            if (IsLoading)
                 return;
 
             using var cw = new Global_GUI.CursorWait();
@@ -5112,7 +5111,7 @@ namespace AITool
 
         private async void chk_filterErrorsAll_Click(object sender, EventArgs e)
         {
-            if (IsLoading.ReadFullFence())
+            if (IsLoading)
                 return;
 
             if (!this.chk_filterErrorsAll.Checked)
@@ -5326,7 +5325,7 @@ namespace AITool
 
                 frm.ShowDialog(this);
                 //sort AIURLList so that all items enabled are at the top. Use OrderbyDescending so that the order is preserved
-                AppSettings.Settings.AIURLList = AppSettings.Settings.AIURLList.OrderByDescending(x => x.Enabled.ReadFullFence()).ToList();
+                AppSettings.Settings.AIURLList = AppSettings.Settings.AIURLList.OrderByDescending(x => x.Enabled).ToList();
             }
 
             UpdateAIURLs();
@@ -5389,7 +5388,7 @@ namespace AITool
             using (Frm_AIServerDeepstackEdit frm = new Frm_AIServerDeepstackEdit())
             {
                 string srv = ((History)this.folv_history.SelectedObjects[0]).AIServer;
-                ClsURLItem url = AITOOL.GetURL(srv);
+                ClsURLItem url = AITOOL.GetURL(srv, false, false);
                 if (url != null)
                 {
                     frm.CurURL = url;
@@ -5403,7 +5402,7 @@ namespace AITool
 
             if (MessageBox.Show("Are you sure you want to reset ALL settings?", "RESET?", MessageBoxButtons.YesNo) == DialogResult.Yes)
             {
-                ResetSettings.WriteFullFence(true);
+                ResetSettings = true;
                 this.Close();
             }
 
@@ -5552,7 +5551,7 @@ namespace AITool
             {
                 if (frm.ShowDialog(this) == DialogResult.OK)
                 {
-                    CloseImmediately.WriteFullFence(true);
+                    CloseImmediately = true;
                     Application.Exit();
 
                 }

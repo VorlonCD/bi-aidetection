@@ -4,7 +4,9 @@ using Newtonsoft.Json;
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 
@@ -33,28 +35,71 @@ namespace AITool
         Other,
         Unknown
     }
+    [DebuggerDisplay("{this.Name}: {this.url}")]
     public class ClsURLItem:IEquatable<ClsURLItem>
     {
 
         public URLTypeEnum Type { get; set; } = URLTypeEnum.Unknown;
+        public int Order { get; set; } = 0;
+
         public string Name { get; set; } = "";
+        public string url { get; set; } = "";
+
         [JsonIgnore]
         public bool IsValid { get; set; } = false;
         public bool IsOnline { get; set; } = false;
-        public string LastResultMessage { get; set; } = "";
-        public string LastSkippedReason { get; set; } = "";
-        public int Order { get; set; } = 0;
-        public long LastTimeMS { get; set; } = 0;
-        public long FullTimeMS { get; set; } = 0;
-        public long AvgTimeMS
-        {
-            get { return Convert.ToInt64(this.AITimeCalcs.Avg); }
-        }
-
-        public string url { get; set; } = "";
-        public ThreadSafe.Boolean Enabled { get; set; } = new ThreadSafe.Boolean(true);
         [JsonIgnore]
         public ThreadSafe.Boolean InUse { get; set; } = new ThreadSafe.Boolean(false);
+        [JsonIgnore]
+        public ThreadSafe.Integer AIQueueLength { get; set; } = new ThreadSafe.Integer(0);
+        public int AIQueueTimeMS
+        {
+            get
+            {
+                if (this.QueueStartTime != DateTime.MinValue)
+                {
+                    return (int)(DateTime.Now - this.QueueStartTime).TotalMilliseconds;
+                }
+                else
+                {
+                    return 0;
+
+                }
+            }
+        }
+        public ThreadSafe.Integer AIQueueSkippedCount { get; set; } = new ThreadSafe.Integer(0);
+        public string LastResultMessage { get; set; } = "";
+        public string LastSkippedReason { get; set; } = "";
+        [JsonIgnore]
+        public string NotReadyReason { get; set; } = "";
+        [JsonIgnore]
+        public bool LastResultSuccess { get; set; } = false;
+        [JsonIgnore]
+        public ThreadSafe.DateTime LastUsedTime { get; set; } = new ThreadSafe.DateTime(DateTime.MinValue, AppSettings.Settings.DateFormat);
+        [JsonIgnore]
+        public ThreadSafe.DateTime QueueStartTime { get; set; } = new ThreadSafe.DateTime(DateTime.MinValue, AppSettings.Settings.DateFormat);
+
+        public int LastTimeMS { get; set; } = 0;
+
+        public int AvgTimeMS
+        {
+            get { return Convert.ToInt32(this.AITimeCalcs.Avg); }
+        }
+        public ThreadSafe.DateTime LastTestedTime { get; set; } = new ThreadSafe.DateTime(DateTime.MinValue, AppSettings.Settings.DateFormat);
+
+        public MovingCalcs AITimeCalcs { get; set; } = new MovingCalcs(500, "TimeCalcs", true);   //store deepstack time calc in the url
+        public MovingCalcs AIQueueLengthCalcs { get; set; } = new MovingCalcs(500, "AIQueueLengthCalcs", false);
+        public DateTime LastMaxQueueLengthTime
+        {
+            get { return this.AIQueueLengthCalcs.LastMaxTime; }
+        }
+        public MovingCalcs AIQueueTimeCalcs { get; set; } = new MovingCalcs(500, "AIQueueTimeCalcs", true);
+        public DateTime LastMaxQueueTimeTime
+        {
+            get { return this.AIQueueTimeCalcs.LastMaxTime; }
+        }
+
+        public ThreadSafe.Boolean Enabled { get; set; } = new ThreadSafe.Boolean(true);
         [JsonIgnore]
         public ThreadSafe.Integer CurErrCount { get; set; } = new ThreadSafe.Integer(0);
         public ThreadSafe.Boolean ErrDisabled { get; set; } = new ThreadSafe.Boolean(false);
@@ -69,28 +114,21 @@ namespace AITool
         public string RefinementObjects { get; set; } = "";
         [JsonIgnore]
         public ThreadSafe.Boolean RefinementUseCurrentlyValid { get; set; } = new ThreadSafe.Boolean(false);
+        [JsonIgnore]
+        public ThreadSafe.Integer CurOrder { get; set; } = new ThreadSafe.Integer(0);
         public bool UseOnlyAsLinkedServer { get; set; } = false;
         public bool LinkServerResults { get; set; } = false;
         public string LinkedResultsServerList { get; set; } = "";
         public string ActiveTimeRange { get; set; } = "00:00:00-23:59:59";
-        public string ImageAdjustProfile { get; set; } = "Default";
-        [JsonIgnore]
-        public ThreadSafe.Integer CurOrder { get; set; } = new ThreadSafe.Integer(0);
         [JsonIgnore]
         public bool IsLocalHost { get; set; } = false;
         public bool IsLocalNetwork { get; set; } = false;
-        public string HelpURL { get; set; } = "";
-        [JsonIgnore]
-        public ThreadSafe.Datetime LastUsedTime { get; set; } = new ThreadSafe.Datetime(DateTime.MinValue);
-        [JsonIgnore]
-        public ThreadSafe.Datetime LastTestedTime { get; set; } = new ThreadSafe.Datetime(DateTime.MinValue);
-        public bool LastResultSuccess { get; set; } = false;
-        public MovingCalcs AITimeCalcs { get; set; } = new MovingCalcs(250, "Images", true);   //store deepstack time calc in the url
         public string CurSrv { get; set; } = "";
         public int Port { get; set; } = 0;
         public string Host { get; set; } = "";
         public int HttpClientTimeoutSeconds { get; set; } = 0;
         public string DefaultURL { get; set; } = "";
+        public string HelpURL { get; set; } = "";
         //[JsonIgnore]
         //public Global.ClsProcess Process { get; set; } = null;
         [JsonIgnore]
@@ -99,15 +137,107 @@ namespace AITool
         public bool UrlFixed { get; set; } = false;
         public bool ExternalSettingsValid { get; set; } = false;
         public bool IgnoreOfflineError { get; set; } = false;  //if we cant even ping the server, we can skip it without giving an error.  This might be useful for servers that are only available at certain times of the day
-
+        public bool AllowAIServerBasedQueue { get; set; } = false;
+        public int AIMaxQueueLength { get; set; } = 16;
+        public int SkipIfImgQueueLengthLarger { get; set; } = 8;
+        public int SkipIfAIQueueTimeOverSecs { get; set; } = 300;  //300=5 mins
         public override string ToString()
         {
             return this.url;
         }
+
+        public bool IsServerReady(int CurrentImgQueueLength, int ValidServerCnt)
+        {
+            if (!Enabled)
+            {
+                NotReadyReason = "Disabled";
+                return false;
+            }
+            if (ErrDisabled)
+            {
+                NotReadyReason = "ErrDisabled";
+                return false;
+            }
+            if (AllowAIServerBasedQueue)
+            {
+                //only return false if there is something in the queue and we actually have other AITOOL urls to use
+                if (this.AIQueueLength > 1 && ValidServerCnt > 1)
+                {
+                    if (AIQueueLength > AIMaxQueueLength)
+                    {
+                        NotReadyReason = "AIServerQueueFull";
+                        AIQueueSkippedCount++;
+                        return false;
+                    }
+                    //if the AI server queue has anything in it and our regular image queue is above a certain length, then skip this server to give others a chance
+                    //if there is only 1 server, then we will still use it since nothing to skip to.
+                    if (CurrentImgQueueLength > this.SkipIfImgQueueLengthLarger)
+                    {
+                        NotReadyReason = "ImgQueueToHigh";
+                        AIQueueSkippedCount++;
+                        return false;
+                    }
+
+                    int queueTimeSecs = (int)(this.AIQueueTimeMS / 1000);
+                    if (queueTimeSecs > SkipIfAIQueueTimeOverSecs)
+                    {
+                        NotReadyReason = "AIServerQueueTimeMaxed";
+                        AIQueueSkippedCount++;
+                        return false;
+                    }
+                }
+            }
+            if (!AllowAIServerBasedQueue && InUse)
+            {
+                NotReadyReason = "InUse";
+                return false;
+            }
+
+            NotReadyReason = "[Ready]";
+            return true;
+
+        }
+        /// <summary>
+        /// This will reduce the queue count by 1 until it reaches 0
+        /// </summary>
+        /// <returns>True if still in use</returns>
+        public bool DecrementQueue()
+        {
+            this.AIQueueLength.Decrement(0);
+            bool ret = this.AIQueueLength == 0;
+            if (ret)
+            {
+                this.AIQueueTimeCalcs.AddToCalc(this.AIQueueTimeMS);
+                this.QueueStartTime = new ThreadSafe.DateTime(DateTime.MinValue, AppSettings.Settings.DateFormat);
+                this.InUse = false;
+            }
+            return ret;
+        }
+
+        public void IncrementQueue(DateTime? time = null)
+        {
+            this.AIQueueLength++;
+            this.InUse = true;
+            if (AIQueueLength == 1)
+            {
+                if (time.HasValue)
+                {
+                    this.LastUsedTime = new ThreadSafe.DateTime(time.Value, AppSettings.Settings.DateFormat);
+                }
+                else
+                {
+                    this.LastUsedTime = new ThreadSafe.DateTime(DateTime.Now, AppSettings.Settings.DateFormat);
+                }
+
+                this.QueueStartTime = new ThreadSafe.DateTime(DateTime.Now, AppSettings.Settings.DateFormat);
+            }
+
+            this.AIQueueLengthCalcs.AddToCalc(this.AIQueueLength);
+        }
         public void IncrementError()
         {
-            this.CurErrCount.AtomicIncrementAndGet();
-            this.ErrCount.AtomicIncrementAndGet();
+            this.CurErrCount++;
+            this.ErrCount++;
         }
 
         public TimeSpan GetTimeout()
@@ -221,7 +351,8 @@ namespace AITool
 
 
 
-            bool ShouldInit = Init || !this.IsValid || string.IsNullOrWhiteSpace(this.url) || (!this.url.Contains("/") && !this.url.Contains("_")) || this.Type == URLTypeEnum.Unknown;
+            //bool ShouldInit = Init || !this.IsValid || string.IsNullOrWhiteSpace(this.url) || (!this.url.Contains("/") && !this.url.Contains("_")) || this.Type == URLTypeEnum.Unknown;
+            bool ShouldInit = Init || string.IsNullOrWhiteSpace(this.url) || (!this.url.Contains("/") && !this.url.Contains("_")) || this.Type == URLTypeEnum.Unknown;
 
             if (ShouldInit)
             {
@@ -276,6 +407,7 @@ namespace AITool
                     this.DefaultURL = "http://127.0.0.1:32168/v1/vision/detection";
                     this.HelpURL = "https://www.codeproject.com/AI/docs/api/api_reference.html";
                     this.Type = URLTypeEnum.CodeProject_AI;
+                    this.AllowAIServerBasedQueue = true;
                 }
                 else if (this.Type == URLTypeEnum.CodeProject_AI_Faces || HasCPFace)
                 {
@@ -284,30 +416,35 @@ namespace AITool
                     this.Type = URLTypeEnum.CodeProject_AI_Faces;
                     this.UseAsRefinementServer = true;
                     this.RefinementObjects = "Person, People, Face";
+                    this.AllowAIServerBasedQueue = true;
                 }
                 else if (this.Type == URLTypeEnum.CodeProject_AI_IPCAM_Animal || HasCPAnimal)
                 {
                     this.DefaultURL = "http://127.0.0.1:32168/v1/vision/custom/ipcam-animal";
                     this.HelpURL = "https://www.codeproject.com/AI/docs/api/api_reference.html";
                     this.Type = URLTypeEnum.CodeProject_AI_IPCAM_Animal;
+                    this.AllowAIServerBasedQueue = true;
                 }
                 else if (this.Type == URLTypeEnum.CodeProject_AI_IPCAM_Combined || HasCPCombined)
                 {
                     this.DefaultURL = "http://127.0.0.1:32168/v1/vision/custom/ipcam-combined";
                     this.HelpURL = "https://www.codeproject.com/AI/docs/api/api_reference.html";
                     this.Type = URLTypeEnum.CodeProject_AI_IPCAM_Combined;
+                    this.AllowAIServerBasedQueue = true;
                 }
                 else if (this.Type == URLTypeEnum.CodeProject_AI_IPCAM_Dark || HasCPDark)
                 {
                     this.DefaultURL = "http://127.0.0.1:32168/v1/vision/custom/ipcam-dark";
                     this.HelpURL = "https://www.codeproject.com/AI/docs/api/api_reference.html";
                     this.Type = URLTypeEnum.CodeProject_AI_IPCAM_Dark;
+                    this.AllowAIServerBasedQueue = true;
                 }
                 else if (this.Type == URLTypeEnum.CodeProject_AI_IPCAM_General || HasCPGeneral)
                 {
                     this.DefaultURL = "http://127.0.0.1:32168/v1/vision/custom/ipcam-general";
                     this.HelpURL = "https://www.codeproject.com/AI/docs/api/api_reference.html";
                     this.Type = URLTypeEnum.CodeProject_AI_IPCAM_General;
+                    this.AllowAIServerBasedQueue = true;
                 }
                 else if (this.Type == URLTypeEnum.CodeProject_AI_Plate || HasCPPlate)
                 {
@@ -316,6 +453,7 @@ namespace AITool
                     this.Type = URLTypeEnum.CodeProject_AI_Plate;
                     this.UseAsRefinementServer = true;
                     this.RefinementObjects = "Ambulance, Car, Truck, Pickup Truck, Bus, SUV, Van, Motorcycle, Motorbike, License Plate, Plate";
+                    this.AllowAIServerBasedQueue = true;
 
                 }
                 else if (this.Type == URLTypeEnum.CodeProject_AI_Scene || HasCPScene)
@@ -323,12 +461,14 @@ namespace AITool
                     this.DefaultURL = "http://127.0.0.1:32168/v1/vision/scene";
                     this.HelpURL = "https://www.codeproject.com/AI/docs/api/api_reference.html";
                     this.Type = URLTypeEnum.CodeProject_AI_Scene;
+                    this.AllowAIServerBasedQueue = true;
                 }
                 else if (this.Type == URLTypeEnum.CodeProject_AI_Custom || HasCPCustom)
                 {
                     this.DefaultURL = "http://127.0.0.1:32168/v1/vision/custom";
                     this.HelpURL = "https://www.codeproject.com/AI/docs/api/api_reference.html";
                     this.Type = URLTypeEnum.CodeProject_AI_Custom;
+                    this.AllowAIServerBasedQueue = true;
                 }
 
 
@@ -571,7 +711,7 @@ namespace AITool
                             this.IsValid = false;
                             this.ExternalSettingsValid = false;
                             ret = false;
-                            this.Enabled.WriteFullFence(false);
+                            this.Enabled = false;
                         }
                     }
                     else
@@ -590,7 +730,7 @@ namespace AITool
             //disable if needed, but never try reenable if the user disabled by themselves 
             if (!this.IsValid)
             {
-                this.Enabled.WriteFullFence(false);
+                this.Enabled = false;
                 AITOOL.Log($"Error: '{this.Type.ToString()}' URL is not known/valid: '{this.url}'");
             }
 
@@ -598,6 +738,25 @@ namespace AITool
             {
                 this.HttpClient = new HttpClient();
                 this.HttpClient.Timeout = this.GetTimeout();
+            }
+
+            //remove duplicates from this.LinkedResultsServerList, assuming they are separated by " ,"
+            if (this.LinkedResultsServerList.IsNotEmpty())
+            {
+                List<string> servers = this.LinkedResultsServerList.SplitStr(",");
+                //use linq to remove duplicates from servers in a case insensitive way using distinct:
+                servers = servers.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+                //loop through servers and add them back to the string as long as AITOOL.GetServer() returns a match that is enabled
+                foreach (string server in servers)
+                {
+                    ClsURLItem srv = AITOOL.GetURL(server, false, true);
+                    if (srv != null && srv.Enabled && srv.UseOnlyAsLinkedServer)
+                    {
+                        this.LinkedResultsServerList = server + " ,";
+                    }
+                }
+
+                this.LinkedResultsServerList = LinkedResultsServerList.Trim(' ', ',');
             }
 
             if (WasFixed)

@@ -80,7 +80,7 @@ namespace AITool
             finally
             {
                 Task.Run(this.HistoryJobQueueLoop);
-                this.HasInitialized.WriteFullFence(true);
+                this.HasInitialized = true;
                 Global.SendMessage(MessageType.DatabaseInitialized);
             }
 
@@ -317,7 +317,7 @@ namespace AITool
             //make sure only one thread updating at a time
             //await Semaphore_Updating.WaitAsync();
 
-            //this.IsUpdating.WriteFullFence(true);
+            //this.IsUpdating= true;
             lock (DBLock)
             {
 
@@ -361,7 +361,7 @@ namespace AITool
                 if (ret || iret > 0)
                 {
                     this.RecentlyAdded.Enqueue(hist);
-                    this.AddedCount.AtomicIncrementAndGet();
+                    this.AddedCount++;
                     this.LastUpdateTime = DateTime.Now;
                 }
 
@@ -369,7 +369,7 @@ namespace AITool
 
             //Semaphore_Updating.Release();
 
-            //this.IsUpdating.WriteFullFence(false);
+            //this.IsUpdating = false;
 
             return ret;
 
@@ -442,14 +442,14 @@ namespace AITool
 
                 if (ret || dret > 0)
                 {
-                    this.DeletedCount.AtomicIncrementAndGet();
+                    this.DeletedCount++;
                     this.LastUpdateTime = DateTime.Now;
                     this.RecentlyDeleted.Enqueue(hist);
                 }
 
                 //Semaphore_Updating.Release();
 
-                //this.IsUpdating.WriteFullFence(false);
+                //this.IsUpdating = false;
 
             }
 
@@ -520,7 +520,7 @@ namespace AITool
                                     if (this.InsertHistoryItem(hist))
                                     {
                                         added++;
-                                        //this.AddedCount.AtomicIncrementAndGet();
+                                        //this.AddedCount++;
                                     }
                                     else
                                     {
@@ -749,7 +749,7 @@ namespace AITool
                     {
                         //this.DeletedCount.AtomicAddAndGet(removed);
                         if (!isnew)
-                            this.AddedCount.AtomicAddAndGet(added);
+                            this.AddedCount = added;
 
                         this.LastUpdateTime = DateTime.Now;
                     }

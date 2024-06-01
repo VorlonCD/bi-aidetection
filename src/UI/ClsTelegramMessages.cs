@@ -53,7 +53,7 @@ namespace AITool
             {
                 if (AppSettings.Settings.telegram_token.IsNotNull() && AppSettings.Settings.telegram_chatids.IsNotEmpty())
                 {
-                    if (!this.Started.ReadFullFence())
+                    if (!this.Started)
                     {
                         Log("Debug: Initializing Telegram Bot...");
 
@@ -77,7 +77,7 @@ namespace AITool
                         this.telegramBot.OnMakingApiRequest += TelegramBot_OnMakingApiRequest;
 
                         //start another thread to initialize listening for commands (said it was non blocking but was having weird issues with it)
-                        if (!this.StartingReceive.ReadFullFence())
+                        if (!this.StartingReceive)
                         {
                             //Only start listening if another instance is not running
                             if (!AppSettings.AlreadyRunning && AppSettings.Settings.telegram_monitor_commands)
@@ -88,7 +88,7 @@ namespace AITool
 
                         Log($"Debug: ...Done in {sw.ElapsedMilliseconds}ms.");
 
-                        this.Started.WriteFullFence(true);
+                        this.Started= true;
                     }
 
                 }
@@ -101,7 +101,7 @@ namespace AITool
             catch (Exception ex)
             {
                 ret = false;
-                this.Started.WriteFullFence(false);
+                this.Started = false;
                 throw;
             }
 
@@ -114,7 +114,7 @@ namespace AITool
 
             try
             {
-                this.StartingReceive.WriteFullFence(true);
+                this.StartingReceive= true;
 
                 Log("Debug: (Initializing StartReceiving)...");
 
@@ -161,7 +161,7 @@ namespace AITool
             }
             finally
             {
-                this.StartingReceive.WriteFullFence(false);
+                this.StartingReceive = false;
             }
 
         }
@@ -186,7 +186,7 @@ namespace AITool
 
             await this.TryStartTelegram();
 
-            if (Started.ReadFullFence())
+            if (Started)
             {
                 message = await this.telegramBot.SendTextMessageAsync(ChatID, Caption);
             }
@@ -202,7 +202,7 @@ namespace AITool
 
             await this.TryStartTelegram();
 
-            if (Started.ReadFullFence())
+            if (Started)
             {
                 await this.telegramBot.SendChatActionAsync(ChatID, ChatAction.UploadPhoto);
 
